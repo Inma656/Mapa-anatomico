@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anatomía Interactiva de la Mano</title>
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f2f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 { color: #2c3e50; margin-bottom: 5px; }
+        p { color: #7f8c8d; margin-top: 0; font-size: 15px; }
+        #mano-network {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #dcdde1;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Anatomía Interactiva: La Mano</h1>
+    <p>🖐️ <b>Instrucciones:</b> Haz clic en los nodos para desplegar las conexiones anatómicas (huesos, músculos y funciones).</p>
+    
+    <div id="mano-network"></div>
+</div>
+
+<script type="text/javascript">
+    // BASE DE DATOS MAESTRA DE LA MANO
+    const masterNodes = [
+        { id: 'mano', label: 'Mano', group: 'region' },
+        // Huesos
+        { id: 'carpo', label: 'Huesos del Carpo\n(Muñeca)', group: 'hueso' },
+        { id: 'metacarpo', label: 'Metacarpianos', group: 'hueso' },
+        { id: 'falanges', label: 'Falanges\n(Dedos)', group: 'hueso' },
+        // Músculos
+        { id: 'interoseos_d', label: 'Músculos Interóseos\nDorsales', group: 'musculo' },
+        { id: 'interoseos_p', label: 'Músculos Interóseos\nPalmares', group: 'musculo' },
+        { id: 'lumbricales', label: 'Músculos Lumbricales', group: 'musculo' },
+        // Funciones/Movimientos
+        { id: 'abduccion', label: 'Abducción de los dedos\n(Separar)', group: 'funcion' },
+        { id: 'aduccion', label: 'Aducción de los dedos\n(Juntar)', group: 'funcion' },
+        { id: 'flexion', label: 'Flexión de las\nArticulaciones MCF', group: 'funcion' }
+    ];
+
+    const masterEdges = [
+        // Conexiones estructurales de la mano
+        { from: 'mano', to: 'carpo', label: 'contiene' },
+        { from: 'carpo', to: 'metacarpo', label: 'se articula con' },
+        { from: 'metacarpo', to: 'falanges', label: 'se articula con' },
+        
+        // Relaciones de los músculos con los huesos (Inserciones)
+        { from: 'interoseos_d', to: 'metacarpo', label: 'se originan en' },
+        { from: 'interoseos_d', to: 'falanges', label: 'se insertan en' },
+        { from: 'interoseos_p', to: 'metacarpo', label: 'se originan en' },
+        { from: 'interoseos_p', to: 'falanges', label: 'se insertan en' },
+        { from: 'lumbricales', to: 'falanges', label: 'se insertan en' },
+        
+        // Relaciones funcionales
+        { from: 'interoseos_d', to: 'abduccion', label: 'ejecutan' },
+        { from: 'interoseos_p', to: 'aduccion', label: 'ejecutan' },
+        { from: 'lumbricales', to: 'flexion', label: 'provocan' }
+    ];
+
+    // ESTADO INICIAL: Solo se ve la región "Mano" al cargar la página
+    const visibleNodes = new vis.DataSet([
+        { id: 'mano', label: 'Mano', group: 'region' }
+    ]);
+    const visibleEdges = new vis.DataSet([]);
+
+    const container = document.getElementById('mano-network');
+    const data = { nodes: visibleNodes, edges: visibleEdges };
+    
+    // CONFIGURACIÓN ESTÉTICA Y FÍSICA (Actualizada para evitar solapamientos)
+    const options = {
+        nodes: {
+            shape: 'dot',
+            size: 28,
+            font: { size: 14, color: '#2c3e50', face: 'Segoe UI' },
+            borderWidth: 2,
+            shadow: true
+        },
+        edges: {
+            arrows: 'to',
+            font: { 
+                size: 11, 
+                color: '#7f8c8d', 
+                align: 'top' // Texto sobre la línea
+            },
+            color: { color: '#b2bec3', highlight: '#2980b9' },
+            smooth: { 
+                type: 'dynamic' // Curvas inteligentes que esquivan nodos
+            }
+        },
+        groups: {
+            region: { color: { background: '#ffeaa7', border: '#fdcb6e' }, size: 35 },
+            hueso: { color: { background: '#dff9fb', border: '#c7ecee' } },
+            musculo: { color: { background: '#ffcb74', border: '#f57c00' } },
+            funcion: { color: { background: '#e8f5e9', border: '#2ecc71' } }
+        },
+        physics: {
+            barnesHut: { 
+                gravitationalConstant: -5000, // Más repulsión
+                centralGravity: 0.1,          // Menos atracción al centro
+                springLength: 250,            // Líneas más largas
+                avoidOverlap: 1               // ¡Bloqueo total de colisiones!
+            },
+            stabilization: { iterations: 200 }
+        },
+        interaction: { hover: true, tooltipDelay: 200 }
+    };
+
+    const network = new vis.Network(container, data, options);
+
+    // LÓGICA DE EXPANSIÓN AL HACER CLIC
+    network.on("click", function (params) {
+        if (params.nodes.length > 0) {
+            const clickedId = params.nodes[0];
+            
+            masterEdges.forEach(edge => {
+                if (edge.from === clickedId || edge.to === clickedId) {
+                    const edgeUniqueId = `${edge.from}-${edge.to}-${edge.label}`;
+                    
+                    // Añadir la arista si no existe en pantalla
+                    if (!visibleEdges.get(edgeUniqueId)) {
+                        visibleEdges.add({ id: edgeUniqueId, ...edge });
+                    }
+                    
+                    // Descubrir el nodo vecino
+                    const neighborId = edge.from === clickedId ? edge.to : edge.from;
+                    
+                    // Añadir el nodo si no está visible
+                    if (!visibleNodes.get(neighborId)) {
+                        const neighborData = masterNodes.find(n => n.id === neighborId);
+                        if (neighborData) {
+                            visibleNodes.add(neighborData);
+                        }
+                    }
+                }
+            });
+        }
+    });
+</script>
+</body>
+</html>
