@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Atlas Anatómico Multicapa 3D</title>
     
-    <script src="https://unpkg.com/3d-force-graph"></script>
+    <script src="https://unpkg.com/three"></script>
     <script src="https://unpkg.com/three-spritetext"></script>
+    <script src="https://unpkg.com/3d-force-graph"></script>
     
     <style>
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #000; }
@@ -15,7 +16,7 @@
             top: 20px;
             left: 20px;
             color: #fff;
-            pointer-events: none; /* Deja que el ratón interactúe con el modelo 3D de fondo */
+            pointer-events: none;
             z-index: 10;
         }
         h1 { margin: 0 0 5px 0; font-size: 24px; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
@@ -25,7 +26,7 @@
         .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; }
         
         /* Estilos para los botones de cámara */
-        .botones-camara { margin-top: 20px; pointer-events: auto; /* Reactiva el clic para los botones */ }
+        .botones-camara { margin-top: 20px; pointer-events: auto; }
         button {
             background-color: #2980b9; 
             color: white; 
@@ -109,24 +110,21 @@
         .linkWidth(1.5)
         .backgroundColor('#111418')
         
-        // --- AQUÍ ESTÁ LA MAGIA DEL TEXTO PERMANENTE ---
-        .nodeThreeObjectExtend(true) // Le decimos que mantenga la bolita original...
+        // --- TEXTO PERMANENTE ---
+        .nodeThreeObjectExtend(true) 
         .nodeThreeObject(node => {
-            // ...y le añadimos un objeto de texto encima
             const sprite = new SpriteText(node.label);
-            sprite.color = 'white'; // Color del texto
-            sprite.textHeight = 4;  // Tamaño de la letra
-            sprite.position.y = 10; // Lo subimos un poco para que no pise la bola
+            sprite.color = 'white'; 
+            sprite.textHeight = 5;  // Letra un poco más grande
+            sprite.position.y = 12; // Lo subimos para no pisar la bolita
             
-            // Opcional: Colorear el texto según la categoría para más legibilidad
             if (node.group === 'hueso') sprite.color = '#85c1e9';
             if (node.group === 'musculo' || node.group === 'nervio') sprite.color = '#f8c471';
             if (node.group === 'acupuntura') sprite.color = '#f1948a';
 
             return sprite;
         })
-        // -----------------------------------------------
-
+        
         .onNodeClick(node => {
             let changesMade = false;
 
