@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Atlas Anatómico Multicapa 3D</title>
+    
     <script src="https://unpkg.com/3d-force-graph"></script>
+    <script src="https://unpkg.com/three-spritetext"></script>
     
     <style>
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #000; }
@@ -18,17 +20,41 @@
         }
         h1 { margin: 0 0 5px 0; font-size: 24px; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
         p { margin: 0; font-size: 14px; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); color: #ccc; }
+        
         #leyenda { margin-top: 15px; font-size: 12px; }
         .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; }
+        
+        /* Estilos para los botones de cámara */
+        .botones-camara { margin-top: 20px; pointer-events: auto; /* Reactiva el clic para los botones */ }
+        button {
+            background-color: #2980b9; 
+            color: white; 
+            border: 1px solid #3498db; 
+            padding: 8px 12px; 
+            margin-right: 8px; 
+            margin-bottom: 8px;
+            border-radius: 6px;
+            cursor: pointer; 
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            transition: background-color 0.2s;
+        }
+        button:hover { background-color: #3498db; }
     </style>
 </head>
 <body>
 
     <div id="ui-layer">
         <h1>Atlas Anatómico Multicapa 3D</h1>
-        <p>🖱️ <b>Arrastra</b> para rotar la cámara. <b>Rueda</b> para hacer zoom.</p>
-        <p>👆 <b>Haz clic en los nodos</b> para descubrir conexiones en diferentes niveles.</p>
+        <p>🖱️ <b>Arrastra</b> para rotar. <b>Rueda</b> para zoom. 👆 <b>Haz clic</b> en los nodos para expandir.</p>
         
+        <div class="botones-camara">
+            <button onclick="Graph.cameraPosition({ x: 0, y: 0, z: 400 }, { x:0, y:0, z:0 }, 1500)">Vista Superior (Acupuntura)</button>
+            <button onclick="Graph.cameraPosition({ x: 400, y: 0, z: 0 }, { x:0, y:0, z:0 }, 1500)">Vista Lateral (Pisos)</button>
+            <button onclick="Graph.cameraPosition({ x: 0, y: 0, z: -400 }, { x:0, y:0, z:0 }, 1500)">Vista Inferior (Huesos)</button>
+        </div>
+
         <div id="leyenda">
             <div><span class="dot" style="background: #e74c3c;"></span> Acupuntura (Piso Superior)</div>
             <div><span class="dot" style="background: #f39c12;"></span> Nervios / Músculos (Piso Medio)</div>
@@ -39,56 +65,68 @@
     <div id="3d-graph"></div>
 
 <script>
-    // 1. BASE DE DATOS MAESTRA (Con coordenadas Z forzadas para crear los pisos)
+    // 1. BASE DE DATOS MAESTRA
     const masterNodes = [
         // PISO INFERIOR (Huesos: fz = -80)
         { id: 'metacarpo3', label: '3º Metacarpiano', group: 'hueso', fz: -80 },
-        { id: 'falange_prox', label: 'Falange Proximal (Dedo Medio)', group: 'hueso', fz: -80 },
+        { id: 'falange_prox', label: 'Falange Proximal', group: 'hueso', fz: -80 },
         
         // PISO MEDIO (Músculos y Nervios: fz = 0)
         { id: 'nervio_mediano', label: 'Nervio Mediano', group: 'nervio', fz: 0 },
         { id: 'lumbrical2', label: '2º Músculo Lumbrical', group: 'musculo', fz: 0 },
         
         // PISO SUPERIOR (Acupuntura: fz = 80)
-        { id: 'pc8', label: 'Punto PC8 (Laogong)', group: 'acupuntura', fz: 80 },
-        { id: 'sj3', label: 'Punto SJ3 (Zhongzhu)', group: 'acupuntura', fz: 80 }
+        { id: 'pc8', label: 'Punto PC8', group: 'acupuntura', fz: 80 },
+        { id: 'sj3', label: 'Punto SJ3', group: 'acupuntura', fz: 80 }
     ];
 
     const masterLinks = [
-        // Conexiones estructurales en el mismo piso
         { source: 'metacarpo3', target: 'falange_prox', label: 'Articula con' },
         { source: 'nervio_mediano', target: 'lumbrical2', label: 'Inerva' },
-        
-        // Conexiones MULTICAPA (Cruzan pisos)
         { source: 'lumbrical2', target: 'falange_prox', label: 'Se inserta en' },
         { source: 'pc8', target: 'metacarpo3', label: 'Localizado sobre' },
         { source: 'sj3', target: 'nervio_mediano', label: 'Estimula' },
-        { source: 'pc8', target: 'nervio_mediano', label: 'Proximidad anatómica' }
+        { source: 'pc8', target: 'nervio_mediano', label: 'Proximidad' }
     ];
 
-    // 2. ESTADO INICIAL (Empezamos mostrando solo un hueso)
+    // ESTADO INICIAL
     let visibleNodes = [ masterNodes.find(n => n.id === 'metacarpo3') ];
     let visibleLinks = [];
 
-    // Función auxiliar para leer IDs de enlaces (3d-force-graph los convierte en objetos internamente)
     const getId = (nodeOrString) => typeof nodeOrString === 'object' ? nodeOrString.id : nodeOrString;
 
-    // 3. CONFIGURACIÓN DEL ESPACIO 3D
+    // CONFIGURACIÓN DEL GRAFO 3D
     const Graph = ForceGraph3D()
         (document.getElementById('3d-graph'))
         .graphData({ nodes: visibleNodes, links: visibleLinks })
-        .nodeLabel('label') // Texto al pasar el ratón por encima
         .nodeColor(node => {
-            if (node.group === 'hueso') return '#3498db'; // Azul
-            if (node.group === 'musculo' || node.group === 'nervio') return '#f39c12'; // Naranja
-            if (node.group === 'acupuntura') return '#e74c3c'; // Rojo
+            if (node.group === 'hueso') return '#3498db';
+            if (node.group === 'musculo' || node.group === 'nervio') return '#f39c12';
+            if (node.group === 'acupuntura') return '#e74c3c';
             return '#ffffff';
         })
         .linkColor(() => 'rgba(255,255,255,0.4)')
         .linkWidth(1.5)
-        .backgroundColor('#111418') // Fondo oscuro de atlas médico
+        .backgroundColor('#111418')
         
-        // 4. LA MAGIA DE EXPANSIÓN AL HACER CLIC
+        // --- AQUÍ ESTÁ LA MAGIA DEL TEXTO PERMANENTE ---
+        .nodeThreeObjectExtend(true) // Le decimos que mantenga la bolita original...
+        .nodeThreeObject(node => {
+            // ...y le añadimos un objeto de texto encima
+            const sprite = new SpriteText(node.label);
+            sprite.color = 'white'; // Color del texto
+            sprite.textHeight = 4;  // Tamaño de la letra
+            sprite.position.y = 10; // Lo subimos un poco para que no pise la bola
+            
+            // Opcional: Colorear el texto según la categoría para más legibilidad
+            if (node.group === 'hueso') sprite.color = '#85c1e9';
+            if (node.group === 'musculo' || node.group === 'nervio') sprite.color = '#f8c471';
+            if (node.group === 'acupuntura') sprite.color = '#f1948a';
+
+            return sprite;
+        })
+        // -----------------------------------------------
+
         .onNodeClick(node => {
             let changesMade = false;
 
@@ -96,10 +134,7 @@
                 const sourceId = getId(link.source);
                 const targetId = getId(link.target);
 
-                // Si el enlace toca el nodo clicado
                 if (sourceId === node.id || targetId === node.id) {
-                    
-                    // Comprobamos si el enlace ya está visible
                     const linkExists = visibleLinks.find(l => getId(l.source) === sourceId && getId(l.target) === targetId);
                     
                     if (!linkExists) {
@@ -107,7 +142,6 @@
                         changesMade = true;
                     }
 
-                    // Descubrimos y añadimos el nodo vecino si no está visible
                     const neighborId = sourceId === node.id ? targetId : sourceId;
                     if (!visibleNodes.find(n => n.id === neighborId)) {
                         visibleNodes.push(masterNodes.find(n => n.id === neighborId));
@@ -116,19 +150,17 @@
                 }
             });
 
-            // Si se descubrieron cosas nuevas, actualizamos el modelo 3D
             if (changesMade) {
-                // Clonamos los arrays para forzar el repintado
                 Graph.graphData({ nodes: [...visibleNodes], links: [...visibleLinks] });
             }
 
-            // Animación cinematográfica: Movemos la cámara hacia el nodo clicado
+            // Animación de cámara al hacer clic
             const distance = 150;
             const distRatio = 1 + distance/Math.hypot(node.x, node.y, node.z);
             Graph.cameraPosition(
                 { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
-                node, // Mirar hacia el nodo
-                1500  // Duración de la animación (1.5 segundos)
+                node, 
+                1500  
             );
         });
 
