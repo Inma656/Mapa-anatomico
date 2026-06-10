@@ -18,7 +18,9 @@
         p { margin: 0; font-size: 14px; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); color: #ccc; }
         #leyenda { margin-top: 15px; font-size: 12px; }
         .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; }
-        .line-dash { display: inline-block; width: 15px; height: 2px; background-color: rgba(255,255,255,0.2); margin-right: 5px; vertical-align: middle;}
+        
+        /* CORRECCIÓN: Ahora la línea de la leyenda también se muestra en rosa */
+        .line-dash { display: inline-block; width: 15px; height: 2px; background-color: #e91e63; margin-right: 5px; vertical-align: middle;}
     </style>
 </head>
 <body>
@@ -32,7 +34,7 @@
             <div><span class="dot" style="background: #e74c3c;"></span> Acupuntura (Piso Superior)</div>
             <div><span class="dot" style="background: #f39c12;"></span> Nervios / Músculos (Piso Medio)</div>
             <div><span class="dot" style="background: #3498db;"></span> Huesos (Piso Inferior)</div>
-            <div style="margin-top: 5px;"><span class="line-dash"></span> Silueta de la Mano</div>
+            <div style="margin-top: 5px;"><span class="line-dash"></span> Silueta de la Mano (Rosa)</div>
         </div>
     </div>
 
@@ -60,7 +62,6 @@
         
         const masterLinks = parsedLinks;
 
-        // Mostrar huesos Y la silueta de inicio
         let visibleNodes = masterNodes.filter(n => n.group === 'hueso' || n.group === 'silueta');
         let visibleLinks = masterLinks.filter(l => 
             visibleNodes.find(n => n.id === l.source) && 
@@ -74,9 +75,8 @@
         const Graph = ForceGraph3D()
             (document.getElementById('3d-graph'))
             .graphData({ nodes: visibleNodes, links: visibleLinks })
-            .nodeLabel(node => node.group === 'silueta' ? '' : node.label) // Ocultar etiqueta para la silueta
+            .nodeLabel(node => node.group === 'silueta' ? '' : node.label) 
             
-            // Hacer que los nodos de la silueta sean enanos e invisibles
             .nodeVal(node => node.group === 'silueta' ? 0.001 : 1)
             .nodeColor(node => {
                 if (node.group === 'silueta') return 'rgba(0,0,0,0)'; 
@@ -93,9 +93,9 @@
                 const sourceNode = masterNodes.find(n => n.id === sourceId);
                 const targetNode = masterNodes.find(n => n.id === targetId);
                 
-                // La línea de la silueta siempre se ve como un alambre sutil y no parpadea
+                // CORRECCIÓN: La silueta ahora brilla en un tono rosa translúcido (#e91e63 con opacidad)
                 if (sourceNode?.group === 'silueta' && targetNode?.group === 'silueta') {
-                    return 'rgba(255, 255, 255, 0.15)';
+                    return 'rgba(233, 30, 99, 0.4)';
                 }
 
                 if (!nodoSeleccionado) return 'rgba(255,255,255,0.3)';
@@ -111,7 +111,7 @@
                 const targetId = getId(link.target);
                 
                 const sourceNode = masterNodes.find(n => n.id === sourceId);
-                if (sourceNode?.group === 'silueta') return 1; // La silueta siempre fina
+                if (sourceNode?.group === 'silueta') return 1.2; // Un pelín más definida la silueta
 
                 if (!nodoSeleccionado) return 1.5;
                 return (sourceId === nodoSeleccionado.id || targetId === nodoSeleccionado.id) ? 4 : 1;
@@ -120,7 +120,6 @@
             .backgroundColor('#111418')
             
             .onNodeClick(node => {
-                // Prevenir que haga nada si el usuario hace clic en el borde invisible sin querer
                 if(node.group === 'silueta') return; 
 
                 nodoSeleccionado = node;
