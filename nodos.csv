@@ -1,0 +1,34 @@
+id,label,group,fx,fy,fz
+carpo,Carpo (Muñeca),hueso,0,0,-80
+meta1,1º Metacarpiano,hueso,-35,20,-80
+fal1_prox,Falange Proximal Pulgar,hueso,-45,40,-80
+fal1_dist,Falange Distal Pulgar,hueso,-55,60,-80
+meta2,2º Metacarpiano,hueso,-15,35,-80
+fal2_prox,Falange Proximal Índice,hueso,-18,65,-80
+fal2_med,Falange Media Índice,hueso,-20,90,-80
+fal2_dist,Falange Distal Índice,hueso,-22,110,-80
+meta3,3º Metacarpiano,hueso,0,40,-80
+fal3_prox,Falange Proximal Medio,hueso,0,75,-80
+fal3_med,Falange Media Medio,hueso,0,105,-80
+fal3_dist,Falange Distal Medio,hueso,0,125,-80
+meta4,4º Metacarpiano,hueso,15,35,-80
+fal4_prox,Falange Proximal Anular,hueso,18,65,-80
+fal4_med,Falange Media Anular,hueso,20,90,-80
+fal4_dist,Falange Distal Anular,hueso,22,110,-80
+meta5,5º Metacarpiano,hueso,30,25,-80
+fal5_prox,Falange Proximal Meñique,hueso,35,50,-80
+fal5_med,Falange Media Meñique,hueso,38,70,-80
+fal5_dist,Falange Distal Meñique,hueso,40,85,-80
+musc_tenar,Eminencia Tenar,musculo,-25,15,0
+musc_hipotenar,Eminencia Hipotenar,musculo,25,15,0
+lumb1,1º Lumbrical,musculo,-10,45,0
+lumb2,2º Lumbrical,musculo,-3,45,0
+lumb3,3º Lumbrical,musculo,8,45,0
+lumb4,4º Lumbrical,musculo,15,45,0
+nervio_mediano,Nervio Mediano,nervio,-5,5,0
+nervio_cubital,Nervio Cubital,nervio,15,5,0
+nervio_radial,Nervio Radial (Rama Superficial),nervio,-25,5,0
+pc8,Punto PC8 (Laogong),acupuntura,0,30,80
+li4,Punto LI4 (Hegu),acupuntura,-25,35,80
+ht8,Punto HT8 (Shaofu),acupuntura,15,30,80
+si3,Punto SI3 (Houxi),acupuntura,35,25,80
