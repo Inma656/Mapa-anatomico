@@ -1,95 +1,151 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atlas Anatómico Multicapa 3D</title>
+    <title>Atlas Anatómico Multicapa 3D - Mano</title>
+    
+    <script src="https://unpkg.com/three"></script>
+    <script src="https://unpkg.com/three-spritetext"></script>
     <script src="https://unpkg.com/3d-force-graph"></script>
     
     <style>
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #000; }
-        #ui-layer {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            color: #fff;
-            pointer-events: none; /* Deja que el ratón interactúe con el modelo 3D de fondo */
-            z-index: 10;
-        }
+        #ui-layer { position: absolute; top: 20px; left: 20px; color: #fff; pointer-events: none; z-index: 10; }
         h1 { margin: 0 0 5px 0; font-size: 24px; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
         p { margin: 0; font-size: 14px; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); color: #ccc; }
         #leyenda { margin-top: 15px; font-size: 12px; }
         .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; }
+        .botones-camara { margin-top: 20px; pointer-events: auto; }
+        button {
+            background-color: #2980b9; color: white; border: 1px solid #3498db; 
+            padding: 8px 12px; margin-right: 8px; margin-bottom: 8px; border-radius: 6px;
+            cursor: pointer; font-family: 'Segoe UI', Tahoma, sans-serif; font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5); transition: background-color 0.2s;
+        }
+        button:hover { background-color: #3498db; }
     </style>
 </head>
 <body>
 
     <div id="ui-layer">
-        <h1>Atlas Anatómico Multicapa 3D</h1>
-        <p>🖱️ <b>Arrastra</b> para rotar la cámara. <b>Rueda</b> para hacer zoom.</p>
-        <p>👆 <b>Haz clic en los nodos</b> para descubrir conexiones en diferentes niveles.</p>
+        <h1>Atlas 3D: Anatomía de la Mano</h1>
+        <p>🖱️ <b>Arrastra</b> para rotar. <b>Rueda</b> para zoom. 👆 <b>Haz clic</b> en nodos para expandir.</p>
         
+        <div class="botones-camara">
+            <button onclick="Graph.cameraPosition({ x: 0, y: 50, z: 400 }, { x:0, y:50, z:0 }, 1500)">Vista Frontal</button>
+            <button onclick="Graph.cameraPosition({ x: 400, y: 50, z: 0 }, { x:0, y:50, z:0 }, 1500)">Vista Lateral (Pisos)</button>
+        </div>
+
         <div id="leyenda">
-            <div><span class="dot" style="background: #e74c3c;"></span> Acupuntura (Piso Superior)</div>
-            <div><span class="dot" style="background: #f39c12;"></span> Nervios / Músculos (Piso Medio)</div>
-            <div><span class="dot" style="background: #3498db;"></span> Huesos (Piso Inferior)</div>
+            <div><span class="dot" style="background: #e74c3c;"></span> Acupuntura (Z = 80)</div>
+            <div><span class="dot" style="background: #f39c12;"></span> Músculos/Nervios (Z = 0)</div>
+            <div><span class="dot" style="background: #3498db;"></span> Huesos (Z = -80)</div>
         </div>
     </div>
 
     <div id="3d-graph"></div>
 
 <script>
-    // 1. BASE DE DATOS MAESTRA (Con coordenadas Z forzadas para crear los pisos)
+    // 1. BASE DE DATOS GEOMÉTRICA (Coordenadas Fijas: fx, fy, fz)
     const masterNodes = [
-        // PISO INFERIOR (Huesos: fz = -80)
-        { id: 'metacarpo3', label: '3º Metacarpiano', group: 'hueso', fz: -80 },
-        { id: 'falange_prox', label: 'Falange Proximal (Dedo Medio)', group: 'hueso', fz: -80 },
+        // --- PISO 1: HUESOS (z: -80) ---
+        { id: 'carpo', label: 'Carpo (Muñeca)', group: 'hueso', fx: 0, fy: 0, fz: -80 },
         
-        // PISO MEDIO (Músculos y Nervios: fz = 0)
-        { id: 'nervio_mediano', label: 'Nervio Mediano', group: 'nervio', fz: 0 },
-        { id: 'lumbrical2', label: '2º Músculo Lumbrical', group: 'musculo', fz: 0 },
+        // Pulgar (Dedo 1) - Abierto hacia la izquierda
+        { id: 'meta1', label: '1º Metacarpiano', group: 'hueso', fx: -35, fy: 20, fz: -80 },
+        { id: 'fal1_prox', label: 'Falange Proximal (Pulgar)', group: 'hueso', fx: -50, fy: 40, fz: -80 },
         
-        // PISO SUPERIOR (Acupuntura: fz = 80)
-        { id: 'pc8', label: 'Punto PC8 (Laogong)', group: 'acupuntura', fz: 80 },
-        { id: 'sj3', label: 'Punto SJ3 (Zhongzhu)', group: 'acupuntura', fz: 80 }
+        // Índice (Dedo 2)
+        { id: 'meta2', label: '2º Metacarpiano', group: 'hueso', fx: -15, fy: 35, fz: -80 },
+        { id: 'fal2_prox', label: 'Falange Proximal (Índice)', group: 'hueso', fx: -18, fy: 70, fz: -80 },
+        
+        // Medio (Dedo 3) - Eje central
+        { id: 'meta3', label: '3º Metacarpiano', group: 'hueso', fx: 0, fy: 40, fz: -80 },
+        { id: 'fal3_prox', label: 'Falange Proximal (Medio)', group: 'hueso', fx: 0, fy: 80, fz: -80 },
+        
+        // Anular (Dedo 4)
+        { id: 'meta4', label: '4º Metacarpiano', group: 'hueso', fx: 15, fy: 35, fz: -80 },
+        { id: 'fal4_prox', label: 'Falange Proximal (Anular)', group: 'hueso', fx: 18, fy: 70, fz: -80 },
+        
+        // Meñique (Dedo 5)
+        { id: 'meta5', label: '5º Metacarpiano', group: 'hueso', fx: 30, fy: 25, fz: -80 },
+        { id: 'fal5_prox', label: 'Falange Proximal (Meñique)', group: 'hueso', fx: 35, fy: 55, fz: -80 },
+
+        // --- PISO 2: MÚSCULOS Y NERVIOS (z: 0) ---
+        // Coinciden en X e Y con los huesos sobre los que descansan
+        { id: 'eminencia_tenar', label: 'Eminencia Tenar', group: 'musculo', fx: -25, fy: 15, fz: 0 },
+        { id: 'nervio_mediano', label: 'Nervio Mediano', group: 'nervio', fx: 0, fy: 10, fz: 0 },
+        { id: 'lumbrical2', label: '2º Lumbrical', group: 'musculo', fx: -8, fy: 50, fz: 0 },
+
+        // --- PISO 3: ACUPUNTURA (z: 80) ---
+        { id: 'pc8', label: 'PC8 (Laogong)', group: 'acupuntura', fx: 0, fy: 30, fz: 80 },
+        { id: 'li4', label: 'LI4 (Hegu)', group: 'acupuntura', fx: -25, fy: 35, fz: 80 }
     ];
 
     const masterLinks = [
-        // Conexiones estructurales en el mismo piso
-        { source: 'metacarpo3', target: 'falange_prox', label: 'Articula con' },
+        // Articulaciones óseas
+        { source: 'carpo', target: 'meta1', label: '' },
+        { source: 'carpo', target: 'meta2', label: '' },
+        { source: 'carpo', target: 'meta3', label: '' },
+        { source: 'carpo', target: 'meta4', label: '' },
+        { source: 'carpo', target: 'meta5', label: '' },
+        { source: 'meta1', target: 'fal1_prox', label: '' },
+        { source: 'meta2', target: 'fal2_prox', label: '' },
+        { source: 'meta3', target: 'fal3_prox', label: '' },
+        { source: 'meta4', target: 'fal4_prox', label: '' },
+        { source: 'meta5', target: 'fal5_prox', label: '' },
+
+        // Conexiones transversales (Cruzando pisos Z)
+        { source: 'eminencia_tenar', target: 'meta1', label: 'Cubre' },
         { source: 'nervio_mediano', target: 'lumbrical2', label: 'Inerva' },
+        { source: 'nervio_mediano', target: 'carpo', label: 'Cruza túnel carpiano' },
         
-        // Conexiones MULTICAPA (Cruzan pisos)
-        { source: 'lumbrical2', target: 'falange_prox', label: 'Se inserta en' },
-        { source: 'pc8', target: 'metacarpo3', label: 'Localizado sobre' },
-        { source: 'sj3', target: 'nervio_mediano', label: 'Estimula' },
-        { source: 'pc8', target: 'nervio_mediano', label: 'Proximidad anatómica' }
+        { source: 'pc8', target: 'meta3', label: 'Sobre el hueso' },
+        { source: 'li4', target: 'eminencia_tenar', label: 'Sobre el músculo' }
     ];
 
-    // 2. ESTADO INICIAL (Empezamos mostrando solo un hueso)
-    let visibleNodes = [ masterNodes.find(n => n.id === 'metacarpo3') ];
-    let visibleLinks = [];
+    // ESTADO INICIAL: Empieza mostrando todos los huesos para que se vea la forma de la mano
+    let visibleNodes = masterNodes.filter(n => n.group === 'hueso');
+    
+    // Mostramos los enlaces estructurales iniciales
+    let visibleLinks = masterLinks.filter(l => 
+        visibleNodes.find(n => n.id === l.source) && 
+        visibleNodes.find(n => n.id === l.target)
+    );
 
-    // Función auxiliar para leer IDs de enlaces (3d-force-graph los convierte en objetos internamente)
     const getId = (nodeOrString) => typeof nodeOrString === 'object' ? nodeOrString.id : nodeOrString;
 
-    // 3. CONFIGURACIÓN DEL ESPACIO 3D
+    // INICIALIZACIÓN DEL MOTOR 3D
     const Graph = ForceGraph3D()
         (document.getElementById('3d-graph'))
         .graphData({ nodes: visibleNodes, links: visibleLinks })
-        .nodeLabel('label') // Texto al pasar el ratón por encima
         .nodeColor(node => {
-            if (node.group === 'hueso') return '#3498db'; // Azul
-            if (node.group === 'musculo' || node.group === 'nervio') return '#f39c12'; // Naranja
-            if (node.group === 'acupuntura') return '#e74c3c'; // Rojo
+            if (node.group === 'hueso') return '#3498db';
+            if (node.group === 'musculo' || node.group === 'nervio') return '#f39c12';
+            if (node.group === 'acupuntura') return '#e74c3c';
             return '#ffffff';
         })
-        .linkColor(() => 'rgba(255,255,255,0.4)')
+        .linkColor(() => 'rgba(255,255,255,0.2)')
         .linkWidth(1.5)
-        .backgroundColor('#111418') // Fondo oscuro de atlas médico
+        .backgroundColor('#111418')
         
-        // 4. LA MAGIA DE EXPANSIÓN AL HACER CLIC
+        // Carteles de texto flotantes
+        .nodeThreeObjectExtend(true) 
+        .nodeThreeObject(node => {
+            const sprite = new SpriteText(node.label);
+            sprite.color = 'white'; 
+            sprite.textHeight = 4;
+            sprite.position.y = 8;
+            
+            if (node.group === 'hueso') sprite.color = '#85c1e9';
+            if (node.group === 'musculo' || node.group === 'nervio') sprite.color = '#f8c471';
+            if (node.group === 'acupuntura') sprite.color = '#f1948a';
+
+            return sprite;
+        })
+        
+        // Lógica de expansión al hacer clic
         .onNodeClick(node => {
             let changesMade = false;
 
@@ -97,10 +153,7 @@
                 const sourceId = getId(link.source);
                 const targetId = getId(link.target);
 
-                // Si el enlace toca el nodo clicado
                 if (sourceId === node.id || targetId === node.id) {
-                    
-                    // Comprobamos si el enlace ya está visible
                     const linkExists = visibleLinks.find(l => getId(l.source) === sourceId && getId(l.target) === targetId);
                     
                     if (!linkExists) {
@@ -108,7 +161,6 @@
                         changesMade = true;
                     }
 
-                    // Descubrimos y añadimos el nodo vecino si no está visible
                     const neighborId = sourceId === node.id ? targetId : sourceId;
                     if (!visibleNodes.find(n => n.id === neighborId)) {
                         visibleNodes.push(masterNodes.find(n => n.id === neighborId));
@@ -117,19 +169,17 @@
                 }
             });
 
-            // Si se descubrieron cosas nuevas, actualizamos el modelo 3D
             if (changesMade) {
-                // Clonamos los arrays para forzar el repintado
                 Graph.graphData({ nodes: [...visibleNodes], links: [...visibleLinks] });
             }
 
-            // Animación cinematográfica: Movemos la cámara hacia el nodo clicado
+            // Animación de cámara
             const distance = 150;
-            const distRatio = 1 + distance/Math.hypot(node.x, node.y, node.z);
+            const distRatio = 1 + distance/Math.hypot(node.fx || node.x, node.fy || node.y, node.fz || node.z);
             Graph.cameraPosition(
-                { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
-                node, // Mirar hacia el nodo
-                1500  // Duración de la animación (1.5 segundos)
+                { x: (node.fx || node.x) * distRatio, y: (node.fy || node.y) * distRatio, z: Math.max(200, (node.fz || node.z) * distRatio) },
+                node, 
+                1500  
             );
         });
 
