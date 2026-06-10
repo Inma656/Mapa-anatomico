@@ -1,34 +1,63 @@
 id,label,group,fx,fy,fz
-carpo,Carpo (Muñeca),hueso,0,0,-80
-meta1,1º Metacarpiano,hueso,-35,20,-80
-fal1_prox,Falange Proximal Pulgar,hueso,-45,40,-80
-fal1_dist,Falange Distal Pulgar,hueso,-55,60,-80
-meta2,2º Metacarpiano,hueso,-15,35,-80
+carpo_escafoide,Escafoides,hueso,-10,5,-80
+carpo_semilunar,Semilunar,hueso,0,5,-80
+carpo_piramidal,Piramidal,hueso,10,5,-80
+carpo_pisiforme,Pisiforme,hueso,15,5,-80
+carpo_trapecio,Trapecio,hueso,-15,15,-80
+carpo_trapezoide,Trapezoide,hueso,-5,15,-80
+carpo_grande,Grande,hueso,5,15,-80
+carpo_ganchoso,Ganchoso,hueso,15,15,-80
+meta1,1º Metacarpiano (Pulgar),hueso,-35,25,-80
+fal1_prox,Falange Proximal Pulgar,hueso,-45,45,-80
+fal1_dist,Falange Distal Pulgar,hueso,-55,65,-80
+meta2,2º Metacarpiano (Índice),hueso,-15,35,-80
 fal2_prox,Falange Proximal Índice,hueso,-18,65,-80
 fal2_med,Falange Media Índice,hueso,-20,90,-80
 fal2_dist,Falange Distal Índice,hueso,-22,110,-80
-meta3,3º Metacarpiano,hueso,0,40,-80
+meta3,3º Metacarpiano (Medio),hueso,0,40,-80
 fal3_prox,Falange Proximal Medio,hueso,0,75,-80
 fal3_med,Falange Media Medio,hueso,0,105,-80
 fal3_dist,Falange Distal Medio,hueso,0,125,-80
-meta4,4º Metacarpiano,hueso,15,35,-80
+meta4,4º Metacarpiano (Anular),hueso,15,35,-80
 fal4_prox,Falange Proximal Anular,hueso,18,65,-80
 fal4_med,Falange Media Anular,hueso,20,90,-80
 fal4_dist,Falange Distal Anular,hueso,22,110,-80
-meta5,5º Metacarpiano,hueso,30,25,-80
+meta5,5º Metacarpiano (Meñique),hueso,30,25,-80
 fal5_prox,Falange Proximal Meñique,hueso,35,50,-80
 fal5_med,Falange Media Meñique,hueso,38,70,-80
 fal5_dist,Falange Distal Meñique,hueso,40,85,-80
-musc_tenar,Eminencia Tenar,musculo,-25,15,0
-musc_hipotenar,Eminencia Hipotenar,musculo,25,15,0
+m_abductor_pulgar,Abductor Corto del Pulgar,musculo,-30,15,0
+m_flexor_pulgar,Flexor Corto del Pulgar,musculo,-25,20,0
+m_oponente_pulgar,Oponente del Pulgar,musculo,-20,15,0
+m_aductor_pulgar,Aductor del Pulgar,musculo,-15,25,0
+m_abductor_menique,Abductor del Meñique,musculo,25,15,0
+m_flexor_menique,Flexor Corto del Meñique,musculo,20,20,0
+m_oponente_menique,Oponente del Meñique,musculo,22,18,0
 lumb1,1º Lumbrical,musculo,-10,45,0
 lumb2,2º Lumbrical,musculo,-3,45,0
 lumb3,3º Lumbrical,musculo,8,45,0
 lumb4,4º Lumbrical,musculo,15,45,0
-nervio_mediano,Nervio Mediano,nervio,-5,5,0
-nervio_cubital,Nervio Cubital,nervio,15,5,0
-nervio_radial,Nervio Radial (Rama Superficial),nervio,-25,5,0
-pc8,Punto PC8 (Laogong),acupuntura,0,30,80
-li4,Punto LI4 (Hegu),acupuntura,-25,35,80
-ht8,Punto HT8 (Shaofu),acupuntura,15,30,80
-si3,Punto SI3 (Houxi),acupuntura,35,25,80
+int_dor1,1º Interóseo Dorsal,musculo,-20,30,0
+int_dor2,2º Interóseo Dorsal,musculo,-8,35,0
+int_dor3,3º Interóseo Dorsal,musculo,8,35,0
+int_dor4,4º Interóseo Dorsal,musculo,22,30,0
+int_pal1,1º Interóseo Palmar,musculo,-12,30,0
+int_pal2,2º Interóseo Palmar,musculo,12,30,0
+int_pal3,3º Interóseo Palmar,musculo,25,25,0
+n_mediano,Nervio Mediano,nervio,-5,5,0
+n_cubital,Nervio Cubital,nervio,15,5,0
+n_radial,Nervio Radial (Superficial),nervio,-25,5,0
+n_dig_pulgar,Nervios Digitales Pulgar,nervio,-45,55,0
+n_dig_indice,Nervios Digitales Índice,nervio,-18,85,0
+n_dig_medio,Nervios Digitales Medio,nervio,0,95,0
+n_dig_anular,Nervios Digitales Anular,nervio,18,85,0
+n_dig_menique,Nervios Digitales Meñique,nervio,35,65,0
+pc8,PC8 (Laogong),acupuntura,0,30,80
+li4,LI4 (Hegu),acupuntura,-25,35,80
+ht8,HT8 (Shaofu),acupuntura,15,30,80
+si3,SI3 (Houxi),acupuntura,35,25,80
+lu10,LU10 (Yuji),acupuntura,-30,20,80
+te3,TE3 (Zhongzhu),acupuntura,22,35,80
+ex_baxie1,EX-UE9 (Baxie 1),acupuntura,-10,50,80
+ex_baxie2,EX-UE9 (Baxie 2),acupuntura,5,55,80
+ex_baxie3,EX-UE9 (Baxie 3),acupuntura,20,50,80
