@@ -4,50 +4,42 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Atlas Anatómico Multicapa 3D - Mano</title>
-    
-    <script src="https://unpkg.com/three@0.136.0/build/three.min.js"></script>
-    <script src="https://unpkg.com/three-spritetext"></script>
     <script src="https://unpkg.com/3d-force-graph"></script>
     
     <style>
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #000; }
-        #ui-layer { position: absolute; top: 20px; left: 20px; color: #fff; pointer-events: none; z-index: 10; }
+        #ui-layer {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #fff;
+            pointer-events: none; /* Deja que el ratón interactúe con el modelo 3D de fondo */
+            z-index: 10;
+        }
         h1 { margin: 0 0 5px 0; font-size: 24px; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
         p { margin: 0; font-size: 14px; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); color: #ccc; }
         #leyenda { margin-top: 15px; font-size: 12px; }
         .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; }
-        .botones-camara { margin-top: 20px; pointer-events: auto; }
-        button {
-            background-color: #2980b9; color: white; border: 1px solid #3498db; 
-            padding: 8px 12px; margin-right: 8px; margin-bottom: 8px; border-radius: 6px;
-            cursor: pointer; font-family: 'Segoe UI', Tahoma, sans-serif; font-weight: bold;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.5); transition: background-color 0.2s;
-        }
-        button:hover { background-color: #3498db; }
     </style>
 </head>
 <body>
 
     <div id="ui-layer">
-        <h1>Atlas 3D: Anatomía de la Mano</h1>
-        <p>🖱️ <b>Arrastra</b> para rotar. <b>Rueda</b> para zoom. 👆 <b>Haz clic</b> en nodos para expandir.</p>
+        <h1>Atlas Anatómico Multicapa 3D</h1>
+        <p>🖱️ <b>Arrastra</b> para rotar la cámara. <b>Rueda</b> para hacer zoom.</p>
+        <p>👆 <b>Haz clic en los nodos</b> para descubrir conexiones en diferentes niveles.</p>
         
-        <div class="botones-camara">
-            <button onclick="Graph.cameraPosition({ x: 0, y: 50, z: 400 }, { x:0, y:50, z:0 }, 1500)">Vista Frontal</button>
-            <button onclick="Graph.cameraPosition({ x: 400, y: 50, z: 0 }, { x:0, y:50, z:0 }, 1500)">Vista Lateral (Pisos)</button>
-        </div>
-
         <div id="leyenda">
-            <div><span class="dot" style="background: #e74c3c;"></span> Acupuntura (Z = 80)</div>
-            <div><span class="dot" style="background: #f39c12;"></span> Músculos/Nervios (Z = 0)</div>
-            <div><span class="dot" style="background: #3498db;"></span> Huesos (Z = -80)</div>
+            <div><span class="dot" style="background: #e74c3c;"></span> Acupuntura (Piso Superior)</div>
+            <div><span class="dot" style="background: #f39c12;"></span> Nervios / Músculos (Piso Medio)</div>
+            <div><span class="dot" style="background: #3498db;"></span> Huesos (Piso Inferior)</div>
         </div>
     </div>
 
     <div id="3d-graph"></div>
 
 <script>
-    // 1. BASE DE DATOS GEOMÉTRICA (Coordenadas Fijas: fx, fy, fz)
+    // 1. BASE DE DATOS GEOMÉTRICA (Coordenadas Fijas para dar forma de mano)
     const masterNodes = [
         // --- PISO 1: HUESOS (z: -80) ---
         { id: 'carpo', label: 'Carpo (Muñeca)', group: 'hueso', fx: 0, fy: 0, fz: -80 },
@@ -95,16 +87,15 @@
         { source: 'meta4', target: 'fal4_prox', label: '' },
         { source: 'meta5', target: 'fal5_prox', label: '' },
 
-        // Conexiones transversales
+        // Conexiones transversales (Multicapa)
         { source: 'eminencia_tenar', target: 'meta1', label: 'Cubre' },
         { source: 'nervio_mediano', target: 'lumbrical2', label: 'Inerva' },
         { source: 'nervio_mediano', target: 'carpo', label: 'Cruza túnel carpiano' },
-        
         { source: 'pc8', target: 'meta3', label: 'Sobre el hueso' },
         { source: 'li4', target: 'eminencia_tenar', label: 'Sobre el músculo' }
     ];
 
-    // ESTADO INICIAL
+    // 2. ESTADO INICIAL (Mostramos todos los huesos de golpe para ver la forma de la mano)
     let visibleNodes = masterNodes.filter(n => n.group === 'hueso');
     let visibleLinks = masterLinks.filter(l => 
         visibleNodes.find(n => n.id === l.source) && 
@@ -113,34 +104,22 @@
 
     const getId = (nodeOrString) => typeof nodeOrString === 'object' ? nodeOrString.id : nodeOrString;
 
-    // INICIALIZACIÓN
+    // 3. CONFIGURACIÓN DEL ESPACIO 3D
     const Graph = ForceGraph3D()
         (document.getElementById('3d-graph'))
         .graphData({ nodes: visibleNodes, links: visibleLinks })
+        .nodeLabel('label') // Muestra el cartelito solo al pasar el ratón
         .nodeColor(node => {
-            if (node.group === 'hueso') return '#3498db';
-            if (node.group === 'musculo' || node.group === 'nervio') return '#f39c12';
-            if (node.group === 'acupuntura') return '#e74c3c';
+            if (node.group === 'hueso') return '#3498db'; 
+            if (node.group === 'musculo' || node.group === 'nervio') return '#f39c12'; 
+            if (node.group === 'acupuntura') return '#e74c3c'; 
             return '#ffffff';
         })
-        .linkColor(() => 'rgba(255,255,255,0.2)')
+        .linkColor(() => 'rgba(255,255,255,0.4)')
         .linkWidth(1.5)
-        .backgroundColor('#111418')
+        .backgroundColor('#111418') 
         
-        .nodeThreeObjectExtend(true) 
-        .nodeThreeObject(node => {
-            const sprite = new SpriteText(node.label);
-            sprite.color = 'white'; 
-            sprite.textHeight = 4;
-            sprite.position.y = 8;
-            
-            if (node.group === 'hueso') sprite.color = '#85c1e9';
-            if (node.group === 'musculo' || node.group === 'nervio') sprite.color = '#f8c471';
-            if (node.group === 'acupuntura') sprite.color = '#f1948a';
-
-            return sprite;
-        })
-        
+        // 4. LA MAGIA DE EXPANSIÓN AL HACER CLIC
         .onNodeClick(node => {
             let changesMade = false;
 
@@ -149,6 +128,7 @@
                 const targetId = getId(link.target);
 
                 if (sourceId === node.id || targetId === node.id) {
+                    
                     const linkExists = visibleLinks.find(l => getId(l.source) === sourceId && getId(l.target) === targetId);
                     
                     if (!linkExists) {
@@ -168,6 +148,7 @@
                 Graph.graphData({ nodes: [...visibleNodes], links: [...visibleLinks] });
             }
 
+            // Animación cinematográfica ajustada para coordenadas fijas
             const distance = 150;
             const distRatio = 1 + distance/Math.hypot(node.fx || node.x, node.fy || node.y, node.fz || node.z);
             Graph.cameraPosition(
