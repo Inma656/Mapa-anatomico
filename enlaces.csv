@@ -1,36 +1,82 @@
 source,target,label
-carpo,meta1,Articula con
-carpo,meta2,Articula con
-carpo,meta3,Articula con
-carpo,meta4,Articula con
-carpo,meta5,Articula con
-meta1,fal1_prox,Articula con
-fal1_prox,fal1_dist,Articula con
-meta2,fal2_prox,Articula con
-fal2_prox,fal2_med,Articula con
-fal2_med,fal2_dist,Articula con
-meta3,fal3_prox,Articula con
-fal3_prox,fal3_med,Articula con
-fal3_med,fal3_dist,Articula con
-meta4,fal4_prox,Articula con
-fal4_prox,fal4_med,Articula con
-fal4_med,fal4_dist,Articula con
-meta5,fal5_prox,Articula con
-fal5_prox,fal5_med,Articula con
-fal5_med,fal5_dist,Articula con
-nervio_mediano,musc_tenar,Inerva
-nervio_mediano,lumb1,Inerva
-nervio_mediano,lumb2,Inerva
-nervio_cubital,musc_hipotenar,Inerva
-nervio_cubital,lumb3,Inerva
-nervio_cubital,lumb4,Inerva
-musc_tenar,meta1,Se origina en
-musc_hipotenar,meta5,Se origina en
+carpo_escafoide,carpo_trapecio,Articula con
+carpo_escafoide,carpo_trapezoide,Articula con
+carpo_semilunar,carpo_grande,Articula con
+carpo_piramidal,carpo_ganchoso,Articula con
+carpo_pisiforme,carpo_piramidal,Articula con
+carpo_trapecio,meta1,Articulación Carpometacarpiana
+carpo_trapezoide,meta2,Articulación Carpometacarpiana
+carpo_grande,meta3,Articulación Carpometacarpiana
+carpo_ganchoso,meta4,Articulación Carpometacarpiana
+carpo_ganchoso,meta5,Articulación Carpometacarpiana
+meta1,fal1_prox,Articulación Metacarpofalángica
+fal1_prox,fal1_dist,Articulación Interfalángica
+meta2,fal2_prox,Articulación Metacarpofalángica
+fal2_prox,fal2_med,Articulación Interfalángica Prox.
+fal2_med,fal2_dist,Articulación Interfalángica Dist.
+meta3,fal3_prox,Articulación Metacarpofalángica
+fal3_prox,fal3_med,Articulación Interfalángica Prox.
+fal3_med,fal3_dist,Articulación Interfalángica Dist.
+meta4,fal4_prox,Articulación Metacarpofalángica
+fal4_prox,fal4_med,Articulación Interfalángica Prox.
+fal4_med,fal4_dist,Articulación Interfalángica Dist.
+meta5,fal5_prox,Articulación Metacarpofalángica
+fal5_prox,fal5_med,Articulación Interfalángica Prox.
+fal5_med,fal5_dist,Articulación Interfalángica Dist.
+n_mediano,m_abductor_pulgar,Inervación Motora
+n_mediano,m_flexor_pulgar,Inervación Motora
+n_mediano,m_oponente_pulgar,Inervación Motora
+n_mediano,lumb1,Inervación Motora
+n_mediano,lumb2,Inervación Motora
+n_cubital,m_aductor_pulgar,Inervación Motora
+n_cubital,m_abductor_menique,Inervación Motora
+n_cubital,m_flexor_menique,Inervación Motora
+n_cubital,m_oponente_menique,Inervación Motora
+n_cubital,lumb3,Inervación Motora
+n_cubital,lumb4,Inervación Motora
+n_cubital,int_dor1,Inervación Motora
+n_cubital,int_dor2,Inervación Motora
+n_cubital,int_dor3,Inervación Motora
+n_cubital,int_dor4,Inervación Motora
+n_cubital,int_pal1,Inervación Motora
+n_cubital,int_pal2,Inervación Motora
+n_cubital,int_pal3,Inervación Motora
+n_mediano,n_dig_pulgar,Se ramifica en
+n_mediano,n_dig_indice,Se ramifica en
+n_mediano,n_dig_medio,Se ramifica en
+n_mediano,n_dig_anular,Se ramifica en (mitad lateral)
+n_cubital,n_dig_anular,Se ramifica en (mitad medial)
+n_cubital,n_dig_menique,Se ramifica en
+n_radial,carpo_escafoide,Pasa sobre
+n_dig_pulgar,fal1_dist,Da sensibilidad a
+n_dig_indice,fal2_dist,Da sensibilidad a
+n_dig_medio,fal3_dist,Da sensibilidad a
+n_dig_anular,fal4_dist,Da sensibilidad a
+n_dig_menique,fal5_dist,Da sensibilidad a
+m_abductor_pulgar,fal1_prox,Se inserta en
+m_flexor_pulgar,fal1_prox,Se inserta en
+m_oponente_pulgar,meta1,Se inserta en
+m_aductor_pulgar,fal1_prox,Se inserta en
+m_abductor_menique,fal5_prox,Se inserta en
+m_flexor_menique,fal5_prox,Se inserta en
+m_oponente_menique,meta5,Se inserta en
 lumb1,fal2_prox,Se inserta en
 lumb2,fal3_prox,Se inserta en
 lumb3,fal4_prox,Se inserta en
 lumb4,fal5_prox,Se inserta en
+int_dor1,fal2_prox,Se inserta en
+int_dor2,fal3_prox,Se inserta en
+int_dor3,fal3_prox,Se inserta en
+int_dor4,fal4_prox,Se inserta en
+int_pal1,fal2_prox,Se inserta en
+int_pal2,fal4_prox,Se inserta en
+int_pal3,fal5_prox,Se inserta en
 pc8,meta3,Localizado sobre
-li4,musc_tenar,Localizado sobre
+li4,m_aductor_pulgar,Localizado sobre
 ht8,meta4,Localizado sobre
 si3,meta5,Localizado sobre
+lu10,m_abductor_pulgar,Localizado sobre
+te3,int_dor4,Localizado sobre
+ex_baxie1,lumb1,Proximidad anatómica
+ex_baxie2,lumb2,Proximidad anatómica
+ex_baxie3,lumb3,Proximidad anatómica
