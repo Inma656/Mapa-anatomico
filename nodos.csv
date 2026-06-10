@@ -61,3 +61,25 @@ te3,TE3 (Zhongzhu),acupuntura,22,35,80
 ex_baxie1,EX-UE9 (Baxie 1),acupuntura,-10,50,80
 ex_baxie2,EX-UE9 (Baxie 2),acupuntura,5,55,80
 ex_baxie3,EX-UE9 (Baxie 3),acupuntura,20,50,80
+c1,Contorno,silueta,-20,-10,-80
+c2,Contorno,silueta,-45,15,-80
+c3,Contorno,silueta,-65,65,-80
+c4,Contorno,silueta,-50,75,-80
+c5,Contorno,silueta,-35,65,-80
+c6,Contorno,silueta,-30,115,-80
+c7,Contorno,silueta,-22,125,-80
+c8,Contorno,silueta,-15,120,-80
+c9,Contorno,silueta,-10,95,-80
+c10,Contorno,silueta,-8,135,-80
+c11,Contorno,silueta,0,140,-80
+c12,Contorno,silueta,8,135,-80
+c13,Contorno,silueta,10,95,-80
+c14,Contorno,silueta,15,120,-80
+c15,Contorno,silueta,22,125,-80
+c16,Contorno,silueta,30,115,-80
+c17,Contorno,silueta,32,70,-80
+c18,Contorno,silueta,38,90,-80
+c19,Contorno,silueta,45,95,-80
+c20,Contorno,silueta,48,85,-80
+c21,Contorno,silueta,45,25,-80
+c22,Contorno,silueta,20,-10,-80
