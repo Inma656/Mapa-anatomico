@@ -28,8 +28,8 @@
 
     <div id="ui-layer">
         <h1>Atlas Anatómico Multicapa 3D</h1>
-        <p>🖱️ <b>Arrastra</b> para rotar la cámara. <b>Rueda</b> para hacer zoom.</p>
-        <p>👆 <b>Haz clic en los nodos</b> para descubrir conexiones en diferentes niveles.</p>
+        <p>🖱️ <b>Arrastra</b> para rotar. <b>Rueda</b> para hacer zoom.</p>
+        <p>👆 <b>Clic en un nodo</b> para descubrir conexiones. 🌌 <b>Clic en el fondo</b> para deseleccionar.</p>
         
         <div id="leyenda">
             <div><span class="dot" style="background: #e74c3c;"></span> Acupuntura (Piso Superior)</div>
@@ -41,17 +41,17 @@
     <div id="3d-graph"></div>
 
 <script>
-    // Usamos Promise.all para cargar los dos CSV a la vez
+    // Usamos Promise.all para cargar los dos CSV a la vez desde GitHub
     Promise.all([
         fetch('nodos.csv').then(res => res.text()),
         fetch('enlaces.csv').then(res => res.text())
     ]).then(([nodosCsv, enlacesCsv]) => {
         
-        // PapaParse convierte el texto del CSV en objetos de JavaScript
+        // PapaParse convierte el texto del CSV en datos procesables
         const parsedNodes = Papa.parse(nodosCsv, { header: true, skipEmptyLines: true }).data;
         const parsedLinks = Papa.parse(enlacesCsv, { header: true, skipEmptyLines: true }).data;
 
-        // Asegurarnos de que las coordenadas sean números y no texto
+        // Formateamos las coordenadas a números
         const masterNodes = parsedNodes.map(n => ({
             id: n.id,
             label: n.label,
@@ -63,7 +63,7 @@
         
         const masterLinks = parsedLinks;
 
-        // ESTADO INICIAL: Mostrar solo la estructura ósea de la mano
+        // ESTADO INICIAL: Mostrar solo los huesos al cargar
         let visibleNodes = masterNodes.filter(n => n.group === 'hueso');
         let visibleLinks = masterLinks.filter(l => 
             visibleNodes.find(n => n.id === l.source) && 
@@ -71,6 +71,9 @@
         );
 
         const getId = (nodeOrString) => typeof nodeOrString === 'object' ? nodeOrString.id : nodeOrString;
+
+        // Variable para recordar qué nodo está seleccionado para el efecto linterna
+        let nodoSeleccionado = null;
 
         // CONFIGURACIÓN DEL GRAFO 3D
         const Graph = ForceGraph3D()
@@ -83,12 +86,31 @@
                 if (node.group === 'acupuntura') return '#e74c3c';
                 return '#ffffff';
             })
-            .linkColor(() => 'rgba(255,255,255,0.4)')
-            .linkWidth(1.5)
+            
+            // LÓGICA DE COLORES DE LÍNEA DINÁMICOS
+            .linkColor(link => {
+                if (!nodoSeleccionado) return 'rgba(255,255,255,0.3)';
+                const sourceId = getId(link.source);
+                const targetId = getId(link.target);
+                if (sourceId === nodoSeleccionado.id || targetId === nodoSeleccionado.id) {
+                    return 'rgba(255,255,255,1)';
+                }
+                return 'rgba(255,255,255,0.05)';
+            })
+            
+            // LÓGICA DE GROSOR DE LÍNEA DINÁMICO
+            .linkWidth(link => {
+                if (!nodoSeleccionado) return 1.5;
+                const sourceId = getId(link.source);
+                const targetId = getId(link.target);
+                return (sourceId === nodoSeleccionado.id || targetId === nodoSeleccionado.id) ? 4 : 1;
+            })
+            
             .backgroundColor('#111418')
             
-            // LÓGICA DE EXPANSIÓN AL CLIC
+            // EXPANSIÓN AL CLIC Y SELECCIÓN
             .onNodeClick(node => {
+                nodoSeleccionado = node;
                 let changesMade = false;
 
                 masterLinks.forEach(link => {
@@ -111,11 +133,10 @@
                     }
                 });
 
-                if (changesMade) {
-                    Graph.graphData({ nodes: [...visibleNodes], links: [...visibleLinks] });
-                }
+                // Actualizamos los datos para repintar colores y nodos nuevos
+                Graph.graphData({ nodes: [...visibleNodes], links: [...visibleLinks] });
 
-                // Animación de la cámara
+                // Animación de cámara
                 const distance = 150;
                 const distRatio = 1 + distance/Math.hypot(node.fx || node.x, node.fy || node.y, node.fz || node.z);
                 Graph.cameraPosition(
@@ -123,6 +144,12 @@
                     node, 
                     1500  
                 );
+            })
+            
+            // RESTAURAR AL HACER CLIC EN EL FONDO
+            .onBackgroundClick(() => {
+                nodoSeleccionado = null;
+                Graph.graphData({ nodes: [...visibleNodes], links: [...visibleLinks] });
             });
     });
 </script>
