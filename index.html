@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Atlas Anatómico Multicapa 3D - Mano</title>
     
-    <script src="https://unpkg.com/three"></script>
+    <script src="https://unpkg.com/three@0.136.0/build/three.min.js"></script>
     <script src="https://unpkg.com/three-spritetext"></script>
     <script src="https://unpkg.com/3d-force-graph"></script>
     
@@ -52,7 +52,7 @@
         // --- PISO 1: HUESOS (z: -80) ---
         { id: 'carpo', label: 'Carpo (Muñeca)', group: 'hueso', fx: 0, fy: 0, fz: -80 },
         
-        // Pulgar (Dedo 1) - Abierto hacia la izquierda
+        // Pulgar (Dedo 1)
         { id: 'meta1', label: '1º Metacarpiano', group: 'hueso', fx: -35, fy: 20, fz: -80 },
         { id: 'fal1_prox', label: 'Falange Proximal (Pulgar)', group: 'hueso', fx: -50, fy: 40, fz: -80 },
         
@@ -60,7 +60,7 @@
         { id: 'meta2', label: '2º Metacarpiano', group: 'hueso', fx: -15, fy: 35, fz: -80 },
         { id: 'fal2_prox', label: 'Falange Proximal (Índice)', group: 'hueso', fx: -18, fy: 70, fz: -80 },
         
-        // Medio (Dedo 3) - Eje central
+        // Medio (Dedo 3)
         { id: 'meta3', label: '3º Metacarpiano', group: 'hueso', fx: 0, fy: 40, fz: -80 },
         { id: 'fal3_prox', label: 'Falange Proximal (Medio)', group: 'hueso', fx: 0, fy: 80, fz: -80 },
         
@@ -73,7 +73,6 @@
         { id: 'fal5_prox', label: 'Falange Proximal (Meñique)', group: 'hueso', fx: 35, fy: 55, fz: -80 },
 
         // --- PISO 2: MÚSCULOS Y NERVIOS (z: 0) ---
-        // Coinciden en X e Y con los huesos sobre los que descansan
         { id: 'eminencia_tenar', label: 'Eminencia Tenar', group: 'musculo', fx: -25, fy: 15, fz: 0 },
         { id: 'nervio_mediano', label: 'Nervio Mediano', group: 'nervio', fx: 0, fy: 10, fz: 0 },
         { id: 'lumbrical2', label: '2º Lumbrical', group: 'musculo', fx: -8, fy: 50, fz: 0 },
@@ -96,7 +95,7 @@
         { source: 'meta4', target: 'fal4_prox', label: '' },
         { source: 'meta5', target: 'fal5_prox', label: '' },
 
-        // Conexiones transversales (Cruzando pisos Z)
+        // Conexiones transversales
         { source: 'eminencia_tenar', target: 'meta1', label: 'Cubre' },
         { source: 'nervio_mediano', target: 'lumbrical2', label: 'Inerva' },
         { source: 'nervio_mediano', target: 'carpo', label: 'Cruza túnel carpiano' },
@@ -105,10 +104,8 @@
         { source: 'li4', target: 'eminencia_tenar', label: 'Sobre el músculo' }
     ];
 
-    // ESTADO INICIAL: Empieza mostrando todos los huesos para que se vea la forma de la mano
+    // ESTADO INICIAL
     let visibleNodes = masterNodes.filter(n => n.group === 'hueso');
-    
-    // Mostramos los enlaces estructurales iniciales
     let visibleLinks = masterLinks.filter(l => 
         visibleNodes.find(n => n.id === l.source) && 
         visibleNodes.find(n => n.id === l.target)
@@ -116,7 +113,7 @@
 
     const getId = (nodeOrString) => typeof nodeOrString === 'object' ? nodeOrString.id : nodeOrString;
 
-    // INICIALIZACIÓN DEL MOTOR 3D
+    // INICIALIZACIÓN
     const Graph = ForceGraph3D()
         (document.getElementById('3d-graph'))
         .graphData({ nodes: visibleNodes, links: visibleLinks })
@@ -130,7 +127,6 @@
         .linkWidth(1.5)
         .backgroundColor('#111418')
         
-        // Carteles de texto flotantes
         .nodeThreeObjectExtend(true) 
         .nodeThreeObject(node => {
             const sprite = new SpriteText(node.label);
@@ -145,7 +141,6 @@
             return sprite;
         })
         
-        // Lógica de expansión al hacer clic
         .onNodeClick(node => {
             let changesMade = false;
 
@@ -173,7 +168,6 @@
                 Graph.graphData({ nodes: [...visibleNodes], links: [...visibleLinks] });
             }
 
-            // Animación de cámara
             const distance = 150;
             const distRatio = 1 + distance/Math.hypot(node.fx || node.x, node.fy || node.y, node.fz || node.z);
             Graph.cameraPosition(
