@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -11,17 +11,14 @@
     <style>
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #000; }
         #ui-layer {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            color: #fff;
-            pointer-events: none;
-            z-index: 10;
+            position: absolute; top: 20px; left: 20px; color: #fff;
+            pointer-events: none; z-index: 10;
         }
         h1 { margin: 0 0 5px 0; font-size: 24px; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
         p { margin: 0; font-size: 14px; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); color: #ccc; }
         #leyenda { margin-top: 15px; font-size: 12px; }
         .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; }
+        .line-dash { display: inline-block; width: 15px; height: 2px; background-color: rgba(255,255,255,0.2); margin-right: 5px; vertical-align: middle;}
     </style>
 </head>
 <body>
@@ -35,40 +32,36 @@
             <div><span class="dot" style="background: #e74c3c;"></span> Acupuntura (Piso Superior)</div>
             <div><span class="dot" style="background: #f39c12;"></span> Nervios / Músculos (Piso Medio)</div>
             <div><span class="dot" style="background: #3498db;"></span> Huesos (Piso Inferior)</div>
+            <div style="margin-top: 5px;"><span class="line-dash"></span> Silueta de la Mano</div>
         </div>
     </div>
 
     <div id="3d-graph"></div>
 
 <script>
-    // Usamos Promise.all para cargar los dos CSV a la vez desde GitHub
     Promise.all([
         fetch('nodos.csv').then(res => res.text()),
         fetch('enlaces.csv').then(res => res.text())
     ]).then(([nodosCsv, enlacesCsv]) => {
         
-        // PapaParse convierte el texto del CSV en datos procesables
         const parsedNodes = Papa.parse(nodosCsv, { header: true, skipEmptyLines: true }).data;
         const parsedLinks = Papa.parse(enlacesCsv, { header: true, skipEmptyLines: true }).data;
 
-        // --- EXPANSIÓN DEL ESPACIO ---
-        // Factor de escala: 2.5 aumentará bastante la separación entre los nodos
         const escala = 2.5;
 
-        // Formateamos las coordenadas a números y las multiplicamos por la escala
         const masterNodes = parsedNodes.map(n => ({
             id: n.id,
             label: n.label,
             group: n.group,
             fx: parseFloat(n.fx) * escala,
             fy: parseFloat(n.fy) * escala,
-            fz: parseFloat(n.fz) * (escala * 0.8) // El eje Z crece un poquito menos para no separar en exceso los pisos
+            fz: parseFloat(n.fz) * (escala * 0.8)
         }));
         
         const masterLinks = parsedLinks;
 
-        // ESTADO INICIAL: Mostrar solo los huesos al cargar
-        let visibleNodes = masterNodes.filter(n => n.group === 'hueso');
+        // Mostrar huesos Y la silueta de inicio
+        let visibleNodes = masterNodes.filter(n => n.group === 'hueso' || n.group === 'silueta');
         let visibleLinks = masterLinks.filter(l => 
             visibleNodes.find(n => n.id === l.source) && 
             visibleNodes.find(n => n.id === l.target)
@@ -76,44 +69,60 @@
 
         const getId = (nodeOrString) => typeof nodeOrString === 'object' ? nodeOrString.id : nodeOrString;
 
-        // Variable para recordar qué nodo está seleccionado para el efecto linterna
         let nodoSeleccionado = null;
 
-        // CONFIGURACIÓN DEL GRAFO 3D
         const Graph = ForceGraph3D()
             (document.getElementById('3d-graph'))
             .graphData({ nodes: visibleNodes, links: visibleLinks })
-            .nodeLabel('label')
+            .nodeLabel(node => node.group === 'silueta' ? '' : node.label) // Ocultar etiqueta para la silueta
+            
+            // Hacer que los nodos de la silueta sean enanos e invisibles
+            .nodeVal(node => node.group === 'silueta' ? 0.001 : 1)
             .nodeColor(node => {
+                if (node.group === 'silueta') return 'rgba(0,0,0,0)'; 
                 if (node.group === 'hueso') return '#3498db';
                 if (node.group === 'musculo' || node.group === 'nervio') return '#f39c12';
                 if (node.group === 'acupuntura') return '#e74c3c';
                 return '#ffffff';
             })
             
-            // LÓGICA DE COLORES DE LÍNEA DINÁMICOS
             .linkColor(link => {
-                if (!nodoSeleccionado) return 'rgba(255,255,255,0.3)';
                 const sourceId = getId(link.source);
                 const targetId = getId(link.target);
+                
+                const sourceNode = masterNodes.find(n => n.id === sourceId);
+                const targetNode = masterNodes.find(n => n.id === targetId);
+                
+                // La línea de la silueta siempre se ve como un alambre sutil y no parpadea
+                if (sourceNode?.group === 'silueta' && targetNode?.group === 'silueta') {
+                    return 'rgba(255, 255, 255, 0.15)';
+                }
+
+                if (!nodoSeleccionado) return 'rgba(255,255,255,0.3)';
+                
                 if (sourceId === nodoSeleccionado.id || targetId === nodoSeleccionado.id) {
                     return 'rgba(255,255,255,1)';
                 }
                 return 'rgba(255,255,255,0.05)';
             })
             
-            // LÓGICA DE GROSOR DE LÍNEA DINÁMICO
             .linkWidth(link => {
-                if (!nodoSeleccionado) return 1.5;
                 const sourceId = getId(link.source);
                 const targetId = getId(link.target);
+                
+                const sourceNode = masterNodes.find(n => n.id === sourceId);
+                if (sourceNode?.group === 'silueta') return 1; // La silueta siempre fina
+
+                if (!nodoSeleccionado) return 1.5;
                 return (sourceId === nodoSeleccionado.id || targetId === nodoSeleccionado.id) ? 4 : 1;
             })
             
             .backgroundColor('#111418')
             
-            // EXPANSIÓN AL CLIC Y SELECCIÓN
             .onNodeClick(node => {
+                // Prevenir que haga nada si el usuario hace clic en el borde invisible sin querer
+                if(node.group === 'silueta') return; 
+
                 nodoSeleccionado = node;
                 let changesMade = false;
 
@@ -137,10 +146,8 @@
                     }
                 });
 
-                // Actualizamos los datos para repintar colores y nodos nuevos
                 Graph.graphData({ nodes: [...visibleNodes], links: [...visibleLinks] });
 
-                // Animación de cámara adaptada al nuevo tamaño del modelo
                 const distance = 150 * escala; 
                 const distRatio = 1 + distance/Math.hypot(node.fx || node.x, node.fy || node.y, node.fz || node.z);
                 Graph.cameraPosition(
@@ -150,7 +157,6 @@
                 );
             })
             
-            // RESTAURAR AL HACER CLIC EN EL FONDO
             .onBackgroundClick(() => {
                 nodoSeleccionado = null;
                 Graph.graphData({ nodes: [...visibleNodes], links: [...visibleLinks] });
