@@ -51,14 +51,18 @@
         const parsedNodes = Papa.parse(nodosCsv, { header: true, skipEmptyLines: true }).data;
         const parsedLinks = Papa.parse(enlacesCsv, { header: true, skipEmptyLines: true }).data;
 
-        // Formateamos las coordenadas a números
+        // --- EXPANSIÓN DEL ESPACIO ---
+        // Factor de escala: 2.5 aumentará bastante la separación entre los nodos
+        const escala = 2.5;
+
+        // Formateamos las coordenadas a números y las multiplicamos por la escala
         const masterNodes = parsedNodes.map(n => ({
             id: n.id,
             label: n.label,
             group: n.group,
-            fx: parseFloat(n.fx),
-            fy: parseFloat(n.fy),
-            fz: parseFloat(n.fz)
+            fx: parseFloat(n.fx) * escala,
+            fy: parseFloat(n.fy) * escala,
+            fz: parseFloat(n.fz) * (escala * 0.8) // El eje Z crece un poquito menos para no separar en exceso los pisos
         }));
         
         const masterLinks = parsedLinks;
@@ -136,11 +140,11 @@
                 // Actualizamos los datos para repintar colores y nodos nuevos
                 Graph.graphData({ nodes: [...visibleNodes], links: [...visibleLinks] });
 
-                // Animación de cámara
-                const distance = 150;
+                // Animación de cámara adaptada al nuevo tamaño del modelo
+                const distance = 150 * escala; 
                 const distRatio = 1 + distance/Math.hypot(node.fx || node.x, node.fy || node.y, node.fz || node.z);
                 Graph.cameraPosition(
-                    { x: (node.fx || node.x) * distRatio, y: (node.fy || node.y) * distRatio, z: Math.max(200, (node.fz || node.z) * distRatio) },
+                    { x: (node.fx || node.x) * distRatio, y: (node.fy || node.y) * distRatio, z: Math.max(200 * escala, (node.fz || node.z) * distRatio) },
                     node, 
                     1500  
                 );
