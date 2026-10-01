@@ -1,166 +1,1775 @@
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atlas Anatómico Multicapa 3D - Mano</title>
-    
+
+    <title>Atlas Anatómico Interactivo 3D - Mano</title>
+
+    <!-- Grafo 3D -->
     <script src="https://unpkg.com/3d-force-graph"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-    
+
+    <!-- CSV -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
     <style>
-        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #000; }
-        #ui-layer {
-            position: absolute; top: 20px; left: 20px; color: #fff;
-            pointer-events: none; z-index: 10;
+        * {
+            box-sizing: border-box;
         }
-        h1 { margin: 0 0 5px 0; font-size: 24px; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
-        p { margin: 0; font-size: 14px; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); color: #ccc; }
-        #leyenda { margin-top: 15px; font-size: 12px; }
-        .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; }
-        
-        /* CORRECCIÓN: Ahora la línea de la leyenda también se muestra en rosa */
-        .line-dash { display: inline-block; width: 15px; height: 2px; background-color: #e91e63; margin-right: 5px; vertical-align: middle;}
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #080b0f;
+            color: white;
+        }
+
+        #3d-graph {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* PANEL */
+
+        #panel {
+            position: absolute;
+            top: 18px;
+            left: 18px;
+
+            width: 300px;
+
+            background: rgba(15, 18, 24, 0.90);
+
+            border: 1px solid rgba(255,255,255,0.15);
+
+            border-radius: 14px;
+
+            padding: 18px;
+
+            z-index: 20;
+
+            box-shadow: 0 10px 35px rgba(0,0,0,0.45);
+
+            backdrop-filter: blur(8px);
+        }
+
+        h1 {
+            margin: 0 0 5px 0;
+            font-size: 21px;
+        }
+
+        .subtitulo {
+            margin-bottom: 16px;
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        h3 {
+            margin-top: 18px;
+            margin-bottom: 9px;
+            font-size: 14px;
+        }
+
+        .capa {
+            display: flex;
+            align-items: center;
+
+            padding: 7px 4px;
+
+            font-size: 14px;
+
+            cursor: pointer;
+        }
+
+        .capa input {
+            margin-right: 9px;
+        }
+
+        .icono {
+            width: 15px;
+            height: 15px;
+
+            display: inline-block;
+
+            border-radius: 50%;
+
+            margin-right: 8px;
+        }
+
+        .hueso {
+            background: #eee8d5;
+        }
+
+        .musculo {
+            background: #b71c1c;
+        }
+
+        .nervio {
+            background: #ffd600;
+        }
+
+        .acupuntura {
+            background: #ff1744;
+        }
+
+        .silueta {
+            background: #ef9a9a;
+        }
+
+        button {
+            width: 100%;
+
+            margin-top: 12px;
+
+            border: none;
+
+            padding: 9px;
+
+            border-radius: 8px;
+
+            background: #263238;
+
+            color: white;
+
+            cursor: pointer;
+
+            font-size: 13px;
+        }
+
+        button:hover {
+            background: #37474f;
+        }
+
+        /* INFORMACIÓN DEL NODO */
+
+        #infoNodo {
+            margin-top: 15px;
+
+            padding: 12px;
+
+            border-radius: 8px;
+
+            background: rgba(255,255,255,0.06);
+
+            min-height: 60px;
+
+            font-size: 13px;
+
+            line-height: 1.4;
+        }
+
+        #infoNodo strong {
+            color: white;
+        }
+
+        #infoNodo span {
+            color: #bbb;
+        }
+
+        #ayuda {
+            position: absolute;
+
+            bottom: 15px;
+            right: 20px;
+
+            z-index: 10;
+
+            color: rgba(255,255,255,.55);
+
+            font-size: 12px;
+
+            background: rgba(0,0,0,.3);
+
+            padding: 8px 12px;
+
+            border-radius: 8px;
+        }
+
     </style>
 </head>
+
 <body>
 
-    <div id="ui-layer">
-        <h1>Atlas Anatómico Multicapa 3D</h1>
-        <p>🖱️ <b>Arrastra</b> para rotar. <b>Rueda</b> para hacer zoom.</p>
-        <p>👆 <b>Clic en un nodo</b> para descubrir conexiones. 🌌 <b>Clic en el fondo</b> para deseleccionar.</p>
-        
-        <div id="leyenda">
-            <div><span class="dot" style="background: #e74c3c;"></span> Acupuntura (Piso Superior)</div>
-            <div><span class="dot" style="background: #f39c12;"></span> Nervios / Músculos (Piso Medio)</div>
-            <div><span class="dot" style="background: #3498db;"></span> Huesos (Piso Inferior)</div>
-            <div style="margin-top: 5px;"><span class="line-dash"></span> Silueta de la Mano (Rosa)</div>
-        </div>
+
+<div id="panel">
+
+    <h1>🖐 Atlas Anatómico 3D</h1>
+
+    <div class="subtitulo">
+        Mano · Anatomía multicapa interactiva
     </div>
 
-    <div id="3d-graph"></div>
+
+    <h3>Capas anatómicas</h3>
+
+
+    <label class="capa">
+
+        <input
+            id="toggleHuesos"
+            type="checkbox"
+            checked
+        >
+
+        <span class="icono hueso"></span>
+
+        Huesos
+
+    </label>
+
+
+    <label class="capa">
+
+        <input
+            id="toggleMusculos"
+            type="checkbox"
+            checked
+        >
+
+        <span class="icono musculo"></span>
+
+        Músculos
+
+    </label>
+
+
+    <label class="capa">
+
+        <input
+            id="toggleNervios"
+            type="checkbox"
+            checked
+        >
+
+        <span class="icono nervio"></span>
+
+        Nervios
+
+    </label>
+
+
+    <label class="capa">
+
+        <input
+            id="toggleAcupuntura"
+            type="checkbox"
+        >
+
+        <span class="icono acupuntura"></span>
+
+        Acupuntura
+
+    </label>
+
+
+    <label class="capa">
+
+        <input
+            id="toggleSilueta"
+            type="checkbox"
+            checked
+        >
+
+        <span class="icono silueta"></span>
+
+        Contorno de la mano
+
+    </label>
+
+
+
+    <button id="btnTodo">
+
+        Mostrar todas las capas
+
+    </button>
+
+
+    <button id="btnLimpiar">
+
+        Deseleccionar estructura
+
+    </button>
+
+
+    <button id="btnFrontal">
+
+        Vista frontal
+
+    </button>
+
+
+    <div id="infoNodo">
+
+        👆 Pulsa sobre una estructura anatómica.
+
+    </div>
+
+
+</div>
+
+
+
+<div id="3d-graph"></div>
+
+
+<div id="ayuda">
+
+    🖱 Arrastrar = rotar · Rueda = zoom · Clic = explorar conexiones
+
+</div>
+
+
 
 <script>
-    Promise.all([
-        fetch('nodos.csv').then(res => res.text()),
-        fetch('enlaces.csv').then(res => res.text())
-    ]).then(([nodosCsv, enlacesCsv]) => {
-        
-        const parsedNodes = Papa.parse(nodosCsv, { header: true, skipEmptyLines: true }).data;
-        const parsedLinks = Papa.parse(enlacesCsv, { header: true, skipEmptyLines: true }).data;
 
-        const escala = 2.5;
+Promise.all([
 
-        const masterNodes = parsedNodes.map(n => ({
-            id: n.id,
-            label: n.label,
-            group: n.group,
-            fx: parseFloat(n.fx) * escala,
-            fy: parseFloat(n.fy) * escala,
-            fz: parseFloat(n.fz) * (escala * 0.8)
-        }));
-        
-        const masterLinks = parsedLinks;
+    fetch('nodos.csv')
+        .then(res => res.text()),
 
-        let visibleNodes = masterNodes.filter(n => n.group === 'hueso' || n.group === 'silueta');
-        let visibleLinks = masterLinks.filter(l => 
-            visibleNodes.find(n => n.id === l.source) && 
-            visibleNodes.find(n => n.id === l.target)
+    fetch('enlaces.csv')
+        .then(res => res.text())
+
+])
+
+.then(([nodosCsv, enlacesCsv]) => {
+
+
+    /* =========================================
+       CARGAMOS LOS CSV
+       ========================================= */
+
+
+    const parsedNodes = Papa.parse(
+
+        nodosCsv,
+
+        {
+            header: true,
+            skipEmptyLines: true
+        }
+
+    ).data;
+
+
+    const parsedLinks = Papa.parse(
+
+        enlacesCsv,
+
+        {
+            header: true,
+            skipEmptyLines: true
+        }
+
+    ).data;
+
+
+
+    /* =========================================
+       ESCALA GENERAL
+       ========================================= */
+
+
+    const ESCALA = 3.2;
+
+
+
+    /* =========================================
+       PROFUNDIDAD ANATÓMICA
+
+       Ya no utilizamos los pisos -80 / 0 / 80.
+
+       Ahora las estructuras quedan superpuestas.
+       ========================================= */
+
+
+    function profundidadAnatomica(group) {
+
+        switch(group) {
+
+            case 'hueso':
+                return 0;
+
+            case 'musculo':
+                return 13;
+
+            case 'nervio':
+                return 24;
+
+            case 'acupuntura':
+                return 34;
+
+            case 'silueta':
+                return 40;
+
+            default:
+                return 0;
+        }
+
+    }
+
+
+
+    /* =========================================
+       NODOS
+       ========================================= */
+
+
+    const masterNodes = parsedNodes.map(n => ({
+
+        id: n.id,
+
+        label: n.label,
+
+        group: n.group,
+
+        fx: parseFloat(n.fx) * ESCALA,
+
+        fy: parseFloat(n.fy) * ESCALA,
+
+        fz: profundidadAnatomica(n.group)
+
+    }));
+
+
+
+    /* =========================================
+       ENLACES
+       ========================================= */
+
+
+    const masterLinks = parsedLinks.map(l => ({
+
+        source: l.source,
+
+        target: l.target,
+
+        label: l.label
+
+    }));
+
+
+
+    /* =========================================
+       CONFIGURACIÓN DE CAPAS
+       ========================================= */
+
+
+    const capas = {
+
+        hueso: true,
+
+        musculo: true,
+
+        nervio: true,
+
+        acupuntura: false,
+
+        silueta: true
+
+    };
+
+
+
+    let nodoSeleccionado = null;
+
+
+
+    /* =========================================
+       OBTENER ID
+       ========================================= */
+
+
+    function getId(obj) {
+
+        return typeof obj === 'object'
+            ? obj.id
+            : obj;
+
+    }
+
+
+
+    /* =========================================
+       SABER SI NODO ES VISIBLE
+       ========================================= */
+
+
+    function nodoVisible(node) {
+
+        return capas[node.group] === true;
+
+    }
+
+
+
+    /* =========================================
+       SABER SI ENLACE ES VISIBLE
+       ========================================= */
+
+
+    function enlaceVisible(link, visibleNodes) {
+
+        const sourceId = getId(link.source);
+
+        const targetId = getId(link.target);
+
+
+        return (
+
+            visibleNodes.some(n => n.id === sourceId)
+
+            &&
+
+            visibleNodes.some(n => n.id === targetId)
+
         );
 
-        const getId = (nodeOrString) => typeof nodeOrString === 'object' ? nodeOrString.id : nodeOrString;
+    }
 
-        let nodoSeleccionado = null;
 
-        const Graph = ForceGraph3D()
-            (document.getElementById('3d-graph'))
-            .graphData({ nodes: visibleNodes, links: visibleLinks })
-            .nodeLabel(node => node.group === 'silueta' ? '' : node.label) 
-            
-            .nodeVal(node => node.group === 'silueta' ? 0.001 : 1)
-            .nodeColor(node => {
-                if (node.group === 'silueta') return 'rgba(0,0,0,0)'; 
-                if (node.group === 'hueso') return '#3498db';
-                if (node.group === 'musculo' || node.group === 'nervio') return '#f39c12';
-                if (node.group === 'acupuntura') return '#e74c3c';
-                return '#ffffff';
-            })
-            
-            .linkColor(link => {
-                const sourceId = getId(link.source);
-                const targetId = getId(link.target);
-                
-                const sourceNode = masterNodes.find(n => n.id === sourceId);
-                const targetNode = masterNodes.find(n => n.id === targetId);
-                
-                // CORRECCIÓN: La silueta ahora brilla en un tono rosa translúcido (#e91e63 con opacidad)
-                if (sourceNode?.group === 'silueta' && targetNode?.group === 'silueta') {
-                    return 'rgba(233, 30, 99, 0.4)';
-                }
 
-                if (!nodoSeleccionado) return 'rgba(255,255,255,0.3)';
-                
-                if (sourceId === nodoSeleccionado.id || targetId === nodoSeleccionado.id) {
-                    return 'rgba(255,255,255,1)';
-                }
-                return 'rgba(255,255,255,0.05)';
-            })
-            
-            .linkWidth(link => {
-                const sourceId = getId(link.source);
-                const targetId = getId(link.target);
-                
-                const sourceNode = masterNodes.find(n => n.id === sourceId);
-                if (sourceNode?.group === 'silueta') return 1.2; // Un pelín más definida la silueta
+    /* =========================================
+       OBJETOS ANATÓMICOS 3D
+       ========================================= */
 
-                if (!nodoSeleccionado) return 1.5;
-                return (sourceId === nodoSeleccionado.id || targetId === nodoSeleccionado.id) ? 4 : 1;
-            })
-            
-            .backgroundColor('#111418')
-            
-            .onNodeClick(node => {
-                if(node.group === 'silueta') return; 
 
-                nodoSeleccionado = node;
-                let changesMade = false;
+    function crearObjetoAnatomico(node) {
 
-                masterLinks.forEach(link => {
-                    const sourceId = getId(link.source);
-                    const targetId = getId(link.target);
 
-                    if (sourceId === node.id || targetId === node.id) {
-                        const linkExists = visibleLinks.find(l => getId(l.source) === sourceId && getId(l.target) === targetId);
-                        
-                        if (!linkExists) {
-                            visibleLinks.push(link);
-                            changesMade = true;
-                        }
+        const group = new THREE.Group();
 
-                        const neighborId = sourceId === node.id ? targetId : sourceId;
-                        if (!visibleNodes.find(n => n.id === neighborId)) {
-                            visibleNodes.push(masterNodes.find(n => n.id === neighborId));
-                            changesMade = true;
-                        }
-                    }
+
+
+        /* -----------------------------------------
+           HUESOS
+           ----------------------------------------- */
+
+
+        if(node.group === 'hueso') {
+
+
+            const esCarpo = node.id.startsWith('carpo');
+
+
+            if(esCarpo) {
+
+                const geometry =
+                    new THREE.SphereGeometry(
+                        4.2,
+                        20,
+                        20
+                    );
+
+
+                geometry.scale(
+                    1.25,
+                    0.9,
+                    0.65
+                );
+
+
+                const material =
+                    new THREE.MeshStandardMaterial({
+
+                        color: 0xeee8d5,
+
+                        roughness: 0.72,
+
+                        metalness: 0.02
+
+                    });
+
+
+                const mesh =
+                    new THREE.Mesh(
+                        geometry,
+                        material
+                    );
+
+
+                group.add(mesh);
+
+
+            } else {
+
+
+                const geometry =
+                    new THREE.CapsuleGeometry(
+                        3.2,
+                        12,
+                        6,
+                        12
+                    );
+
+
+                const material =
+                    new THREE.MeshStandardMaterial({
+
+                        color: 0xeee8d5,
+
+                        roughness: 0.72,
+
+                        metalness: 0.02
+
+                    });
+
+
+                const mesh =
+                    new THREE.Mesh(
+                        geometry,
+                        material
+                    );
+
+
+                mesh.rotation.z = 0;
+
+
+                group.add(mesh);
+
+            }
+
+        }
+
+
+
+        /* -----------------------------------------
+           MÚSCULOS
+           ----------------------------------------- */
+
+
+        else if(node.group === 'musculo') {
+
+
+            const geometry =
+                new THREE.SphereGeometry(
+                    6,
+                    24,
+                    24
+                );
+
+
+            geometry.scale(
+                0.8,
+                1.8,
+                0.55
+            );
+
+
+            const material =
+                new THREE.MeshStandardMaterial({
+
+                    color: 0xb71c1c,
+
+                    roughness: 0.65,
+
+                    transparent: true,
+
+                    opacity: 0.90
+
                 });
 
-                Graph.graphData({ nodes: [...visibleNodes], links: [...visibleLinks] });
 
-                const distance = 150 * escala; 
-                const distRatio = 1 + distance/Math.hypot(node.fx || node.x, node.fy || node.y, node.fz || node.z);
-                Graph.cameraPosition(
-                    { x: (node.fx || node.x) * distRatio, y: (node.fy || node.y) * distRatio, z: Math.max(200 * escala, (node.fz || node.z) * distRatio) },
-                    node, 
-                    1500  
+            const mesh =
+                new THREE.Mesh(
+                    geometry,
+                    material
                 );
-            })
-            
-            .onBackgroundClick(() => {
-                nodoSeleccionado = null;
-                Graph.graphData({ nodes: [...visibleNodes], links: [...visibleLinks] });
-            });
+
+
+            group.add(mesh);
+
+        }
+
+
+
+        /* -----------------------------------------
+           NERVIOS
+           ----------------------------------------- */
+
+
+        else if(node.group === 'nervio') {
+
+
+            const geometry =
+                new THREE.SphereGeometry(
+                    3.2,
+                    18,
+                    18
+                );
+
+
+            const material =
+                new THREE.MeshStandardMaterial({
+
+                    color: 0xffd600,
+
+                    emissive: 0x665500,
+
+                    emissiveIntensity: 0.6
+
+                });
+
+
+            const mesh =
+                new THREE.Mesh(
+                    geometry,
+                    material
+                );
+
+
+            group.add(mesh);
+
+        }
+
+
+
+        /* -----------------------------------------
+           ACUPUNTURA
+           ----------------------------------------- */
+
+
+        else if(node.group === 'acupuntura') {
+
+
+            const geometry =
+                new THREE.SphereGeometry(
+                    3.5,
+                    20,
+                    20
+                );
+
+
+            const material =
+                new THREE.MeshStandardMaterial({
+
+                    color: 0xff1744,
+
+                    emissive: 0xff001f,
+
+                    emissiveIntensity: 0.8
+
+                });
+
+
+            const mesh =
+                new THREE.Mesh(
+                    geometry,
+                    material
+                );
+
+
+            group.add(mesh);
+
+        }
+
+
+
+        /* -----------------------------------------
+           SILUETA
+
+           Invisible como nodo.
+           Las líneas formarán el contorno.
+           ----------------------------------------- */
+
+
+        else if(node.group === 'silueta') {
+
+
+            const geometry =
+                new THREE.SphereGeometry(
+                    0.01,
+                    4,
+                    4
+                );
+
+
+            const material =
+                new THREE.MeshBasicMaterial({
+
+                    transparent: true,
+
+                    opacity: 0
+
+                });
+
+
+            group.add(
+
+                new THREE.Mesh(
+                    geometry,
+                    material
+                )
+
+            );
+
+        }
+
+
+
+        return group;
+
+    }
+
+
+
+    /* =========================================
+       GRAFO
+       ========================================= */
+
+
+    const Graph = ForceGraph3D()
+
+    (document.getElementById('3d-graph'))
+
+
+    /* -----------------------------------------
+       OBJETO DE CADA NODO
+       ----------------------------------------- */
+
+
+    .nodeThreeObject(node => {
+
+        return crearObjetoAnatomico(node);
+
+    })
+
+
+    /* -----------------------------------------
+       ETIQUETA
+       ----------------------------------------- */
+
+
+    .nodeLabel(node => {
+
+        if(node.group === 'silueta')
+            return '';
+
+        return `
+            <div style="
+                background:rgba(0,0,0,.85);
+                color:white;
+                padding:7px 10px;
+                border-radius:6px;
+                font-size:13px;
+            ">
+
+                <strong>
+                    ${node.label}
+                </strong>
+
+                <br>
+
+                <span style="
+                    color:#aaa;
+                    text-transform:capitalize;
+                ">
+
+                    ${node.group}
+
+                </span>
+
+            </div>
+        `;
+
+    })
+
+
+    /* -----------------------------------------
+       COLOR DE LOS ENLACES
+       ----------------------------------------- */
+
+
+    .linkColor(link => {
+
+
+        const sourceId =
+            getId(link.source);
+
+
+        const targetId =
+            getId(link.target);
+
+
+        const sourceNode =
+            masterNodes.find(
+                n => n.id === sourceId
+            );
+
+
+        const targetNode =
+            masterNodes.find(
+                n => n.id === targetId
+            );
+
+
+
+        /* SILUETA */
+
+
+        if(
+
+            sourceNode?.group === 'silueta'
+
+            &&
+
+            targetNode?.group === 'silueta'
+
+        ) {
+
+            return 'rgba(239,154,154,0.30)';
+
+        }
+
+
+
+        /* NERVIOS */
+
+
+        if(
+
+            sourceNode?.group === 'nervio'
+
+            ||
+
+            targetNode?.group === 'nervio'
+
+        ) {
+
+
+            if(nodoSeleccionado) {
+
+                if(
+
+                    sourceId === nodoSeleccionado.id
+
+                    ||
+
+                    targetId === nodoSeleccionado.id
+
+                ) {
+
+                    return '#ffff00';
+
+                }
+
+            }
+
+
+            return 'rgba(255,214,0,0.75)';
+
+        }
+
+
+
+        /* CONEXIONES MUSCULARES */
+
+
+        if(
+
+            sourceNode?.group === 'musculo'
+
+            ||
+
+            targetNode?.group === 'musculo'
+
+        ) {
+
+            return 'rgba(220,70,70,0.55)';
+
+        }
+
+
+
+        /* HUESOS */
+
+
+        if(
+
+            sourceNode?.group === 'hueso'
+
+            &&
+
+            targetNode?.group === 'hueso'
+
+        ) {
+
+            return 'rgba(240,235,215,.40)';
+
+        }
+
+
+
+        /* ACUPUNTURA */
+
+
+        if(
+
+            sourceNode?.group === 'acupuntura'
+
+            ||
+
+            targetNode?.group === 'acupuntura'
+
+        ) {
+
+            return 'rgba(255,23,68,.65)';
+
+        }
+
+
+
+        if(nodoSeleccionado) {
+
+            if(
+
+                sourceId === nodoSeleccionado.id
+
+                ||
+
+                targetId === nodoSeleccionado.id
+
+            ) {
+
+                return '#ffffff';
+
+            }
+
+
+            return 'rgba(255,255,255,.05)';
+
+        }
+
+
+        return 'rgba(255,255,255,.16)';
+
+    })
+
+
+    /* -----------------------------------------
+       GROSOR
+       ----------------------------------------- */
+
+
+    .linkWidth(link => {
+
+
+        const sourceId =
+            getId(link.source);
+
+
+        const targetId =
+            getId(link.target);
+
+
+        const sourceNode =
+            masterNodes.find(
+                n => n.id === sourceId
+            );
+
+
+        const targetNode =
+            masterNodes.find(
+                n => n.id === targetId
+            );
+
+
+
+        if(
+
+            sourceNode?.group === 'silueta'
+
+            &&
+
+            targetNode?.group === 'silueta'
+
+        ) {
+
+            return 1.4;
+
+        }
+
+
+        if(
+
+            sourceNode?.group === 'nervio'
+
+            ||
+
+            targetNode?.group === 'nervio'
+
+        ) {
+
+            return 3.3;
+
+        }
+
+
+        if(nodoSeleccionado) {
+
+            if(
+
+                sourceId === nodoSeleccionado.id
+
+                ||
+
+                targetId === nodoSeleccionado.id
+
+            ) {
+
+                return 5;
+
+            }
+
+        }
+
+
+        return 1.5;
+
+    })
+
+
+    /* -----------------------------------------
+       PARTÍCULAS DE LOS ENLACES
+
+       Da sensación de flujo nervioso
+       ----------------------------------------- */
+
+
+    .linkDirectionalParticles(link => {
+
+
+        const sourceId =
+            getId(link.source);
+
+
+        const targetId =
+            getId(link.target);
+
+
+        const sourceNode =
+            masterNodes.find(
+                n => n.id === sourceId
+            );
+
+
+        const targetNode =
+            masterNodes.find(
+                n => n.id === targetId
+            );
+
+
+        if(
+
+            sourceNode?.group === 'nervio'
+
+            ||
+
+            targetNode?.group === 'nervio'
+
+        ) {
+
+            return 2;
+
+        }
+
+
+        return 0;
+
+    })
+
+
+    .linkDirectionalParticleWidth(2.2)
+
+    .linkDirectionalParticleSpeed(0.004)
+
+
+    /* -----------------------------------------
+       FONDO
+       ----------------------------------------- */
+
+
+    .backgroundColor('#080b0f')
+
+
+
+    /* =========================================
+       CLIC EN ESTRUCTURA
+       ========================================= */
+
+
+    .onNodeClick(node => {
+
+
+        if(node.group === 'silueta')
+            return;
+
+
+        nodoSeleccionado = node;
+
+
+
+        mostrarInformacion(node);
+
+
+
+        /* ACERCAR CÁMARA */
+
+
+        const distance = 130;
+
+
+        const x = node.x ?? node.fx;
+
+        const y = node.y ?? node.fy;
+
+        const z = node.z ?? node.fz;
+
+
+        const longitud =
+            Math.hypot(
+                x,
+                y,
+                z
+            ) || 1;
+
+
+        const ratio =
+            1 + distance / longitud;
+
+
+        Graph.cameraPosition(
+
+            {
+
+                x: x * ratio,
+
+                y: y * ratio,
+
+                z: z + 180
+
+            },
+
+            {
+
+                x: x,
+
+                y: y,
+
+                z: z
+
+            },
+
+            900
+
+        );
+
+
+        refrescar();
+
+    })
+
+
+
+    /* =========================================
+       CLIC EN FONDO
+       ========================================= */
+
+
+    .onBackgroundClick(() => {
+
+
+        nodoSeleccionado = null;
+
+
+        document.getElementById(
+            'infoNodo'
+        ).innerHTML =
+
+            '👆 Pulsa sobre una estructura anatómica.';
+
+
+        refrescar();
+
     });
+
+
+
+    /* =========================================
+       MOSTRAR INFORMACIÓN
+       ========================================= */
+
+
+    function mostrarInformacion(node) {
+
+
+        const conexiones =
+            masterLinks.filter(link => {
+
+
+                return (
+
+                    getId(link.source) === node.id
+
+                    ||
+
+                    getId(link.target) === node.id
+
+                );
+
+            });
+
+
+
+        let html = `
+
+            <strong style="font-size:15px">
+                ${node.label}
+            </strong>
+
+            <br>
+
+            <span>
+                Tipo:
+                ${nombreGrupo(node.group)}
+            </span>
+
+        `;
+
+
+
+        if(conexiones.length > 0) {
+
+
+            html += `
+
+                <hr style="
+                    border:0;
+                    border-top:1px solid rgba(255,255,255,.12);
+                    margin:9px 0;
+                ">
+
+                <strong>
+                    Conexiones
+                </strong>
+
+            `;
+
+
+
+            conexiones.forEach(link => {
+
+
+                const otroId =
+
+                    getId(link.source) === node.id
+
+                    ?
+
+                    getId(link.target)
+
+                    :
+
+                    getId(link.source);
+
+
+
+                const otroNodo =
+                    masterNodes.find(
+                        n => n.id === otroId
+                    );
+
+
+
+                if(otroNodo) {
+
+
+                    html += `
+
+                        <div
+                            style="
+                                margin-top:6px;
+                                color:#bbb;
+                            "
+                        >
+
+                            • ${link.label || 'Relacionado con'}
+
+                            <strong style="color:white">
+
+                                ${otroNodo.label}
+
+                            </strong>
+
+                        </div>
+
+                    `;
+
+                }
+
+            });
+
+        }
+
+
+
+        document.getElementById(
+            'infoNodo'
+        ).innerHTML = html;
+
+    }
+
+
+
+    function nombreGrupo(group) {
+
+
+        switch(group) {
+
+            case 'hueso':
+                return '🦴 Hueso';
+
+            case 'musculo':
+                return '💪 Músculo';
+
+            case 'nervio':
+                return '🟡 Nervio';
+
+            case 'acupuntura':
+                return '🔴 Punto de acupuntura';
+
+            default:
+                return group;
+
+        }
+
+    }
+
+
+
+    /* =========================================
+       REFRESCAR DATOS VISIBLES
+       ========================================= */
+
+
+    function refrescar() {
+
+
+        const visibleNodes =
+            masterNodes.filter(nodoVisible);
+
+
+        const visibleLinks =
+            masterLinks.filter(
+                l => enlaceVisible(
+                    l,
+                    visibleNodes
+                )
+            );
+
+
+        Graph.graphData({
+
+            nodes: visibleNodes,
+
+            links: visibleLinks
+
+        });
+
+    }
+
+
+
+    /* =========================================
+       CONTROLES
+       ========================================= */
+
+
+    document
+        .getElementById('toggleHuesos')
+        .addEventListener(
+            'change',
+            e => {
+
+                capas.hueso =
+                    e.target.checked;
+
+                refrescar();
+
+            }
+        );
+
+
+    document
+        .getElementById('toggleMusculos')
+        .addEventListener(
+            'change',
+            e => {
+
+                capas.musculo =
+                    e.target.checked;
+
+                refrescar();
+
+            }
+        );
+
+
+    document
+        .getElementById('toggleNervios')
+        .addEventListener(
+            'change',
+            e => {
+
+                capas.nervio =
+                    e.target.checked;
+
+                refrescar();
+
+            }
+        );
+
+
+    document
+        .getElementById('toggleAcupuntura')
+        .addEventListener(
+            'change',
+            e => {
+
+                capas.acupuntura =
+                    e.target.checked;
+
+                refrescar();
+
+            }
+        );
+
+
+    document
+        .getElementById('toggleSilueta')
+        .addEventListener(
+            'change',
+            e => {
+
+                capas.silueta =
+                    e.target.checked;
+
+                refrescar();
+
+            }
+        );
+
+
+
+    /* TODAS LAS CAPAS */
+
+
+    document
+        .getElementById('btnTodo')
+        .addEventListener(
+            'click',
+            () => {
+
+
+                capas.hueso = true;
+
+                capas.musculo = true;
+
+                capas.nervio = true;
+
+                capas.acupuntura = true;
+
+                capas.silueta = true;
+
+
+
+                document.getElementById(
+                    'toggleHuesos'
+                ).checked = true;
+
+
+                document.getElementById(
+                    'toggleMusculos'
+                ).checked = true;
+
+
+                document.getElementById(
+                    'toggleNervios'
+                ).checked = true;
+
+
+                document.getElementById(
+                    'toggleAcupuntura'
+                ).checked = true;
+
+
+                document.getElementById(
+                    'toggleSilueta'
+                ).checked = true;
+
+
+                refrescar();
+
+            }
+        );
+
+
+
+    /* LIMPIAR SELECCIÓN */
+
+
+    document
+        .getElementById('btnLimpiar')
+        .addEventListener(
+            'click',
+            () => {
+
+
+                nodoSeleccionado = null;
+
+
+                document.getElementById(
+                    'infoNodo'
+                ).innerHTML =
+
+                    '👆 Pulsa sobre una estructura anatómica.';
+
+
+                refrescar();
+
+            }
+        );
+
+
+
+    /* VISTA FRONTAL */
+
+
+    document
+        .getElementById('btnFrontal')
+        .addEventListener(
+            'click',
+            () => {
+
+
+                Graph.cameraPosition(
+
+                    {
+
+                        x: 0,
+
+                        y: 30,
+
+                        z: 650
+
+                    },
+
+                    {
+
+                        x: 0,
+
+                        y: 100,
+
+                        z: 0
+
+                    },
+
+                    1000
+
+                );
+
+            }
+        );
+
+
+
+    /* =========================================
+       INICIO
+       ========================================= */
+
+
+    refrescar();
+
+
+
+    /* Vista inicial */
+
+
+    setTimeout(() => {
+
+        Graph.cameraPosition(
+
+            {
+
+                x: 0,
+
+                y: 30,
+
+                z: 650
+
+            },
+
+            {
+
+                x: 0,
+
+                y: 100,
+
+                z: 0
+
+            },
+
+            0
+
+        );
+
+    }, 200);
+
+
+})
+
+.catch(error => {
+
+
+    console.error(error);
+
+
+    document.body.innerHTML += `
+
+        <div
+            style="
+                position:absolute;
+                left:20px;
+                bottom:20px;
+                padding:15px;
+                background:#b71c1c;
+                color:white;
+                z-index:1000;
+                max-width:500px;
+            "
+        >
+
+            Error cargando los CSV.
+
+            <br><br>
+
+            No abras index.html directamente haciendo doble clic.
+
+            Usa un servidor local.
+
+        </div>
+
+    `;
+
+});
+
+
 </script>
+
+
 </body>
+
 </html>
