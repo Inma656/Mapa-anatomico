@@ -7,11 +7,14 @@
 
     <title>Atlas Anatómico Interactivo 3D - Mano</title>
 
-    <!-- Grafo 3D -->
-    <script src="https://unpkg.com/3d-force-graph"></script>
+<!-- THREE.JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-    <!-- CSV -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<!-- Grafo 3D -->
+<script src="https://unpkg.com/3d-force-graph"></script>
+
+<!-- CSV -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
     <style>
         * {
@@ -598,12 +601,12 @@ Promise.all([
 
 
                 const geometry =
-                    new THREE.CapsuleGeometry(
-                        3.2,
-                        12,
-                        6,
-                        12
-                    );
+                   new THREE.CylinderGeometry(
+    3.0,
+    3.8,
+    18,
+    16
+)
 
 
                 const material =
